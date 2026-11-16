@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Mock-up | ระบบประเมินศูนย์สุขภาพชุมชน (miniHHC - Pro-Health Data BKK South)</title>
+  <meta name="description" content="Demo Mock-up สำหรับ UX Audit และการสาธิตระบบบันทึกคะแนนการตรวจเยี่ยมศูนย์สุขภาพชุมชน">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts - Kanit (TH) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Kanit', sans-serif;
+      background-color: #f3f4f6;
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .nav-active {
+      background-color: #3b82f6;
+      color: white !important;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+    }
+    .view-section {
+      transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+    }
+    .view-hidden {
+      display: none !important;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .score-btn-group input:checked + label {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+
+    /* Grade badge styles */
+    .grade-excellent { background-color: #10b981; color: white; }
+    .grade-good { background-color: #84cc16; color: white; }
+    .grade-fair { background-color: #eab308; color: white; }
+    .grade-improve { background-color: #ef4444; color: white; }
+    .grade-closed, .grade-not-found { background-color: #fee2e2; color: #b91c1c; font-weight: 600; }
+
+    @media print {
+      body { background-color: white; padding: 0; margin: 0; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .max-w-6xl, .max-w-7xl { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+      table { width: 100% !important; font-size: 11px !important; }
+    }
+  </style>
+</head>
+<body class="flex flex-col text-gray-800 bg-gray-50 overflow-x-hidden min-h-screen">
+
+  <!-- ================= DEMO BANNER ================= -->
+  <div class="bg-amber-500 text-white text-[11px] font-semibold px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 no-print z-40">
+    <div class="flex items-center gap-2">
+      <span class="bg-white/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[10px]">DEMO MOCK-UP</span>
+      <span>สภาพแวดล้อมจำลองสำหรับ UX Audit &amp; ทดสอบระบบ (ข้อมูลทั้งหมดเป็นข้อมูลจำลอง ไม่เชื่อมต่อฐานข้อมูลจริง)</span>
+    </div>
+    <button onclick="resetDemoData()" class="px-2.5 py-0.5 bg-white text-amber-700 hover:bg-amber-50 rounded-lg text-[10px] font-bold transition shadow-xs">
+      <i class="fa-solid fa-rotate-left mr-1"></i>รีเซ็ตข้อมูลจำลอง
+    </button>
+  </div>
+
+  <!-- ================= LOADING SCREEN ================= -->
+  <div id="app-loading" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity duration-300 hidden">
+    <div class="flex flex-col items-center p-8 rounded-2xl glass-card shadow-2xl">
+      <div class="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <h3 class="mt-5 text-lg font-semibold text-gray-700">กำลังโหลดข้อมูลจำลอง...</h3>
+      <p class="text-xs text-gray-500 mt-1">ระบบตรวจประเมินศูนย์สุขภาพชุมชน (Demo)</p>
+    </div>
+  </div>
+
+  <!-- ================= AUTH LAYOUT (Demo Role Switcher & Mock 21PASS SSO) ================= -->
+  <div id="auth-layout" class="view-section min-h-screen flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 mb-3 shadow-sm border border-emerald-100">
+          <i class="fa-solid fa-house-chimney-medical text-3xl"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800">ศูนย์สุขภาพชุมชน</h2>
+        <p class="text-xs text-gray-400 mt-1 font-medium">ระบบบันทึกคะแนนการตรวจเยี่ยม (Pro-Health Data BKK South)</p>
+      </div>
+
+      <!-- Primary SSO & Guest Buttons (Matches Production UI) -->
+      <div id="sso-login-box" class="flex flex-col gap-3 w-full mx-auto mb-5">
+        <button onclick="loginWithMockSSO('admin')"
+          class="w-full py-3.5 px-4 bg-[#059669] hover:bg-[#047857] text-white font-bold rounded-xl text-sm text-center shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+          🔑 เข้าสู่ระบบด้วย 21PASS SSO (จำลอง: Admin)
+        </button>
+
+        <button onclick="loginWithMockSSO('user')"
+          class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs text-center shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2">
+          👩‍⚕️ เข้าสู่ระบบด้วย 21PASS SSO (จำลอง: ผู้ตรวจเยี่ยม/พยาบาล)
+        </button>
+
+        <button onclick="loginAsGuest()"
+          class="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-xs text-center border border-gray-200 transition flex items-center justify-center gap-2">
+          🏛️ เข้าใช้งานในฐานะแขกรับเชิญ (Guest - อ่านอย่างเดียว)
+        </button>
+      </div>
+
+      <!-- Optional PIN Login Demo Box (Reflects Legacy Code.gs PIN capability) -->
+      <div class="border-t border-gray-100 pt-4">
+        <p class="text-[11px] font-bold text-gray-500 mb-2 flex items-center justify-between">
+          <span>หรือทดสอบเข้าสู่ระบบด้วยบัญชีจำลอง (Mock PIN)</span>
+          <span class="text-[10px] font-normal text-blue-600">Demo Only</span>
+        </p>
+        <form onsubmit="handleMockPinLogin(event)" class="space-y-2.5 text-xs">
+          <div class="grid grid-cols-2 gap-2">
+            <select id="demo-pin-user" class="px-2.5 py-2 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500">
+              <option value="DEMO_U001">👑 demo_admin (PIN: 9999)</option>
+              <option value="DEMO_U002">👩‍⚕️ demo_nurse (PIN: 1111)</option>
+              <option value="DEMO_U003">💊 demo_pharm (PIN: 2222)</option>
+            </select>
+            <input type="password" id="demo-pin-input" maxlength="4" placeholder="กรอก PIN (เช่น 9999)"
+              class="px-3 py-2 border border-gray-200 rounded-xl bg-gray-50 text-center font-bold tracking-widest focus:outline-none focus:ring-1 focus:ring-blue-500">
+          </div>
+          <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl transition">
+            เข้าสู่ระบบด้วย PIN จำลอง
+          </button>
+        </form>
+      </div>
+
+      <div class="mt-5 pt-4 border-t border-gray-100 text-center">
+        <p class="text-[10px] text-gray-400 font-medium">ระบบยืนยันตัวตนจำลอง (Mock 21PASS SSO &amp; RBAC) สำหรับ UX Audit</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN LAYOUT ================= -->
+  <div id="main-layout" class="flex flex-col md:flex-row min-h-screen w-full view-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shadow-xl z-20 no-print">
+      <!-- Header -->
+      <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg">
+          <i class="fa-solid fa-house-chimney-medical text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-white leading-tight">ตรวจระบบศูนย์ฯ</h1>
+          <p class="text-[10px] text-blue-400 font-medium tracking-widest uppercase">Community Health Audit</p>
+        </div>
+      </div>
+
+      <!-- User card info -->
+      <div class="px-6 py-4 border-b border-slate-800 bg-slate-950/40 flex items-center gap-3">
+        <div id="aside-user-emoji" class="text-3xl">👤</div>
+        <div class="overflow-hidden">
+          <p id="aside-user-name" class="text-xs font-bold text-white truncate">Loading...</p>
+          <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+            <span id="aside-user-role" class="bg-blue-900/60 text-blue-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase">Role</span>
+            <span id="aside-user-position" class="bg-slate-800 text-slate-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full">Position</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menus list -->
+      <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <a href="javascript:void(0)" onclick="switchView('home')" id="nav-home"
+          class="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition group text-xs font-semibold">
+          <i class="fa-solid fa-table-columns text-slate-400 group-hover:text-blue-400 text-sm w-5"></i>
+          <span>หน้าหลัก / ปฏิทินตรวจ</span>
+        </a>
+        <a href="javascript:void(0)" onclick="switchView('schedule')" id="nav-schedule"
+          class="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition group text-xs font-semibold">
+          <i class="fa-solid fa-calendar-alt text-slate-400 group-hover:text-blue-400 text-sm w-5"></i>
+          <span>กำหนดวันเข้าตรวจ</span>
+        </a>
+        <a href="javascript:void(0)" onclick="switchView('list')" id="nav-list"
+          class="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition group text-xs font-semibold">
+          <i class="fa-solid fa-check-to-slot text-slate-400 group-hover:text-blue-400 text-sm w-5"></i>
+          <span>ลงคะแนนตรวจประเมิน</span>
+        </a>
+        <a href="javascript:void(0)" onclick="switchView('results')" id="nav-results"
+          class="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition group text-xs font-semibold">
+          <i class="fa-solid fa-square-poll-vertical text-slate-400 group-hover:text-blue-400 text-sm w-5"></i>
+          <span>ผลคะแนนและภาพถ่าย</span>
+        </a>
+        <a href="javascript:void(0)" onclick="switchView('admin')" id="nav-admin"
+          class="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition group text-xs font-semibold hidden">
+          <i class="fa-solid fa-user-shield text-slate-400 group-hover:text-blue-400 text-sm w-5"></i>
+          <span>จัดการระบบ (แอดมิน)</span>
+        </a>
+        <a href="javascript:void(0)" onclick="switchView('profile')" id="nav-profile"
+          class="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-slate-800 hover:text-white transition group text-xs font-semibold">
+          <i class="fa-solid fa-user-gear text-slate-400 group-hover:text-blue-400 text-sm w-5"></i>
+          <span>ข้อมูลส่วนตัว</span>
+        </a>
+      </nav>
+
+      <!-- Logout -->
+      <div class="p-4 border-t border-slate-800 bg-slate-950/20">
+        <button onclick="handleLogout()"
+          class="w-full py-2 bg-slate-800 hover:bg-red-950/40 hover:text-red-400 text-slate-300 font-medium rounded-xl transition flex items-center justify-center gap-2 text-xs">
+          <i class="fa-solid fa-power-off"></i>
+          <span>ออกจากระบบ / เปลี่ยนบัญชี</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-h-0 bg-gray-50">
+
+      <!-- Top header -->
+      <header class="h-16 px-6 bg-white border-b border-gray-200 flex items-center justify-between shadow-sm shrink-0 no-print">
+        <h2 id="page-title" class="font-bold text-gray-800 text-base md:text-lg">หน้าหลัก</h2>
+        <div id="header-user-status" class="flex items-center gap-4 text-xs font-semibold text-gray-500"></div>
+      </header>
+
+      <!-- Views Container -->
+      <div class="flex-1 p-4 md:p-6 overflow-y-auto max-w-6xl w-full mx-auto">
+
+        <!-- ================= VIEW: HOME ================= -->
+        <section id="view-home" class="view-section space-y-6 view-hidden">
+          <div class="p-6 rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-800 text-white shadow-lg relative overflow-hidden">
+            <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 text-blue-900/10 text-9xl font-bold font-sans">
+              HHC
+            </div>
+            <div class="relative z-10 space-y-2">
+              <h3 class="text-xl font-bold flex items-center gap-2">
+                <span id="welcome-emoji">👋</span>
+                สวัสดี, <span id="welcome-name">...</span>!
+              </h3>
+              <p class="text-xs text-blue-100/90 max-w-xl">ยินดีต้อนรับเข้าสู่ระบบประเมินและตรวจงานศูนย์สุขภาพชุมชน ลงบันทึกคะแนน ตรวจสอบกำหนดการ หรือดึงประวัติการประเมินย้อนหลังได้ในหน้าเดียว</p>
+            </div>
+          </div>
+
+          <!-- Calendar Section -->
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4">
+              <h2 class="text-lg font-bold text-gray-700 flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-blue-600"></i>ปฏิทินตรวจประเมิน
+              </h2>
+              <div class="flex items-center space-x-2">
+                <label for="home-fiscal-year" class="font-bold text-gray-600 text-xs">ปีงบประมาณ:</label>
+                <select id="home-fiscal-year" onchange="loadHomeData()" class="text-xs rounded-lg border-gray-200 border shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 pl-2.5 pr-8"></select>
+              </div>
+            </div>
+
+            <!-- Quarter Tabs -->
+            <div id="home-quarter-tabs" class="flex border-b border-gray-100">
+              <button id="q1-tab" onclick="showQuarterHome(1)" class="flex-1 py-2 text-center text-xs font-semibold text-gray-500 border-b-2 border-transparent">ไตรมาส 1</button>
+              <button id="q2-tab" onclick="showQuarterHome(2)" class="flex-1 py-2 text-center text-xs font-semibold text-gray-500 border-b-2 border-transparent">ไตรมาส 2</button>
+              <button id="q3-tab" onclick="showQuarterHome(3)" class="flex-1 py-2 text-center text-xs font-semibold text-gray-500 border-b-2 border-transparent">ไตรมาส 3</button>
+              <button id="q4-tab" onclick="showQuarterHome(4)" class="flex-1 py-2 text-center text-xs font-semibold text-gray-500 border-b-2 border-transparent">ไตรมาส 4</button>
+            </div>
+
+            <div id="home-visit-list" class="pt-4 divide-y divide-gray-100 max-h-80 overflow-y-auto"></div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW: VISIT SCHEDULE ================= -->
+        <section id="view-schedule" class="view-section space-y-6 view-hidden">
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">ตารางลงวันตรวจเยี่ยม</h3>
+                <p class="text-xs text-gray-400 mt-0.5">กำหนดวันที่ที่จะลงพื้นที่ตามแต่ละไตรมาสที่ได้รับมอบหมาย</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <label for="schedule-fiscal-year" class="font-bold text-gray-600 text-xs">ปีงบประมาณ:</label>
+                <select id="schedule-fiscal-year" onchange="loadScheduleData()" class="text-xs rounded-lg border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 pl-2.5 pr-8"></select>
+              </div>
+            </div>
+
+            <!-- Warning for Guest -->
+            <div id="schedule-guest-warning" class="hidden mb-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs rounded-xl flex items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>บทบาท แขกรับเชิญ: แสดงผลแบบอ่านอย่างเดียว (Read-only) ไม่สามารถแก้ไขข้อมูลได้</span>
+            </div>
+
+            <!-- Quarter Tabs for Scheduling -->
+            <div class="flex border-b border-gray-100 mb-6 no-print">
+              <button id="sch-q1-tab" onclick="switchScheduleQuarter(1)" class="flex-1 py-2 text-center text-xs font-bold text-blue-600 border-b-2 border-blue-500">ไตรมาส 1</button>
+              <button id="sch-q2-tab" onclick="switchScheduleQuarter(2)" class="flex-1 py-2 text-center text-xs font-semibold text-gray-500 border-b-2 border-transparent">ไตรมาส 2</button>
+              <button id="sch-q3-tab" onclick="switchScheduleQuarter(3)" class="flex-1 py-2 text-center text-xs font-semibold text-gray-500 border-b-2 border-transparent">ไตรมาส 3</button>
+              <button id="sch-q4-tab" onclick="switchScheduleQuarter(4)" class="flex-1 py-2 text-center text-xs font-semibold text-gray-500 border-b-2 border-transparent">ไตรมาส 4</button>
+            </div>
+
+            <div id="schedule-cards" class="space-y-6"></div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW: VISIT LIST (FOR SCORING) ================= -->
+        <section id="view-list" class="view-section space-y-6 view-hidden">
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">รายการตรวจที่ต้องลงคะแนน</h3>
+                <p class="text-xs text-gray-400 mt-0.5">เลือกหัวข้อชุมชนที่พร้อมประเมินเพื่อกรอกคะแนนสะสม (45 ตัวชี้วัด)</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <label for="list-fiscal-year" class="font-bold text-gray-600 text-xs">ปีงบประมาณ:</label>
+                <select id="list-fiscal-year" onchange="loadVisitList()" class="text-xs rounded-lg border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 pl-2.5 pr-8"></select>
+              </div>
+            </div>
+
+            <div id="visit-list-quarters" class="space-y-6"></div>
+          </div>
+        </section>
+
+        <!-- ================= VIEW: SCORING FORM ================= -->
+        <section id="view-scoring" class="view-section space-y-6 view-hidden">
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-3xl mx-auto">
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100 mb-6">
+              <div class="flex items-center gap-3">
+                <button type="button" onclick="switchView('list')" class="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex items-center justify-center">
+                  <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div>
+                  <h3 id="score-community-name" class="font-bold text-gray-800 text-base">ชื่อชุมชน</h3>
+                  <p id="score-visit-date" class="text-xs text-gray-400 mt-0.5">วันที่ตรวจ: ...</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 no-print">
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="not-found-checkbox" name="StaffNotFound" value="true" onchange="toggleNotFound(this.checked)"
+                    class="h-4 w-4 rounded text-red-600 focus:ring-red-500 border-gray-300">
+                  <span class="ml-1.5 text-xs font-bold text-red-600">ไม่พบเจ้าหน้าที่</span>
+                </label>
+                <button type="button" id="btn-full-score" onclick="setFullScore()" class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg text-xs transition">
+                  ให้คะแนนเต็ม
+                </button>
+              </div>
+            </div>
+
+            <form id="scoring-form" onsubmit="saveScoringData(event)" class="space-y-6">
+              <input type="hidden" id="scoring-visit-id">
+
+              <div id="scoring-questions" class="space-y-6"></div>
+
+              <!-- Remarks -->
+              <div class="border-t border-gray-100 pt-5">
+                <label for="remarks" class="block text-xs font-bold text-gray-700 mb-2">หมายเหตุการประเมิน</label>
+                <textarea id="remarks" name="Remarks" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-xs" placeholder="ระบุข้อเสนอแนะหรือบันทึกเพิ่มเติมจากการตรวจเยี่ยม..."></textarea>
+              </div>
+
+              <!-- Extra config -->
+              <div class="p-3 bg-gray-50 rounded-xl flex items-center justify-between text-xs">
+                <span class="font-semibold text-gray-600">มีเภสัชกรร่วมในการลงพื้นที่ด้วยหรือไม่?</span>
+                <div class="flex gap-4">
+                  <label class="flex items-center">
+                    <input type="radio" name="PharmacistPresent" value="true" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-1.5 font-bold">ใช่</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="radio" name="PharmacistPresent" value="false" checked class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-1.5 font-bold">ไม่ใช่</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Photos Upload -->
+              <div class="space-y-2 border-t border-gray-100 pt-5 no-print">
+                <label class="block text-xs font-bold text-gray-700">อัปโหลดภาพถ่ายประกอบการเยี่ยม (สูงสุด 10 รูป - จำลองในเบราว์เซอร์)</label>
+                <div id="existing-photos" class="grid grid-cols-5 gap-2 mb-2"></div>
+                <input type="file" id="photo-upload" multiple accept="image/*" onchange="previewPhotos(event)"
+                  class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <div id="photo-previews" class="grid grid-cols-5 gap-2 pt-2"></div>
+              </div>
+
+              <div id="scoring-submit-container" class="flex justify-end gap-3 pt-5 border-t border-gray-100 no-print">
+                <button type="button" onclick="switchView('list')" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-xs transition">ยกเลิก</button>
+                <button type="submit" id="btn-save-score" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล
+                </button>
+              </div>
+
+              <!-- Guest warning display -->
+              <div id="scoring-guest-disabled-msg" class="hidden p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-100 text-center font-bold">
+                ⚠️ ในฐานะแขกรับเชิญ คุณสามารถดูข้อซักถามได้เท่านั้น ไม่สามารถส่งคะแนนเข้าระบบได้
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- ================= VIEW: RESULTS & GALLERY ================= -->
+        <section id="view-results" class="view-section space-y-6 view-hidden">
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+
+            <header class="flex flex-wrap justify-between items-center pb-4 border-b gap-4 no-print">
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">ผลการตรวจเยี่ยมและภาพถ่าย</h3>
+                <p class="text-xs text-gray-400 mt-0.5">สรุปผลประเมินรายไตรมาสและภาพถ่ายศูนย์สุขภาพ</p>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <button type="button" onclick="alert('โหมด Demo: ในระบบจริงจะเปิดโฟลเดอร์ Google Drive เก็บภาพถ่ายของโครงการ (ถูกปิดกั้นเพื่อความปลอดภัยในโหมด Demo)')"
+                  class="px-3.5 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl text-xs shadow-sm transition">
+                  <i class="fas fa-folder-open mr-1"></i>คลังภาพจำลอง (Demo)
+                </button>
+                <button onclick="window.print()" class="px-3.5 py-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-xl text-xs shadow-sm transition">
+                  <i class="fas fa-print mr-1"></i>พิมพ์รายงาน
+                </button>
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="hide-inactive-toggle" onchange="toggleInactiveRows(this.checked)" class="sr-only peer" checked>
+                  <div class="relative w-9 h-5 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                  <span class="ms-2 text-xs font-semibold text-gray-600">ซ่อนศูนย์ที่ปิด</span>
+                </label>
+                <div class="flex items-center space-x-1.5">
+                  <label for="results-fiscal-year" class="font-bold text-gray-600 text-xs">ปีงบฯ:</label>
+                  <select id="results-fiscal-year" onchange="loadResults()" class="text-xs rounded-lg border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 pl-2.5 pr-8"></select>
+                </div>
+              </div>
+            </header>
+
+            <!-- Results Tabs -->
+            <div class="border-b border-gray-200 mb-6 no-print">
+              <nav class="-mb-px flex space-x-4">
+                <button id="res-tab-scores" onclick="switchResultTab('scores')" class="whitespace-nowrap py-3 px-4 border-b-2 font-bold text-sm text-blue-600 border-blue-500">
+                  <i class="fas fa-chart-bar mr-2"></i>สรุปผลคะแนน
+                </button>
+                <button id="res-tab-photos" onclick="switchResultTab('photos')" class="whitespace-nowrap py-3 px-4 border-b-2 font-semibold text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                  <i class="fas fa-images mr-2"></i>แกลเลอรีภาพถ่าย
+                </button>
+              </nav>
+            </div>
+
+            <!-- Scores Table Tab Content -->
+            <div id="results-scores-tab">
+
+              <!-- Dashboard Panel -->
+              <div class="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 no-print">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                  <h4 class="font-bold text-gray-700 text-xs flex items-center">
+                    <i class="fas fa-chart-pie text-blue-500 mr-1.5 text-sm"></i>แดชบอร์ดสรุปสถิติผลการตรวจเยี่ยม
+                  </h4>
+                  <div class="flex bg-gray-200 p-0.5 rounded-lg text-[10px] font-bold text-gray-600">
+                    <button onclick="changeDashboardPeriod('yearly')" id="db-period-yearly" class="px-2.5 py-1 rounded-md bg-white text-gray-800 shadow-xs transition">ทั้งปีงบประมาณ</button>
+                    <button onclick="changeDashboardPeriod('q1')" id="db-period-q1" class="px-2.5 py-1 rounded-md transition">Q1</button>
+                    <button onclick="changeDashboardPeriod('q2')" id="db-period-q2" class="px-2.5 py-1 rounded-md transition">Q2</button>
+                    <button onclick="changeDashboardPeriod('q3')" id="db-period-q3" class="px-2.5 py-1 rounded-md transition">Q3</button>
+                    <button onclick="changeDashboardPeriod('q4')" id="db-period-q4" class="px-2.5 py-1 rounded-md transition">Q4</button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="bg-white p-3.5 rounded-xl border border-slate-100 shadow-2xs">
+                    <h5 class="font-bold text-gray-600 text-[10px] mb-3 flex justify-between">
+                      <span>สัดส่วนระดับคะแนนประเมิน (เกรด)</span>
+                      <span id="db-grade-period-lbl" class="text-blue-500 font-semibold">(ทั้งปีงบประมาณ)</span>
+                    </h5>
+                    <div id="db-grade-stats" class="space-y-2"></div>
+                  </div>
+
+                  <div class="bg-white p-3.5 rounded-xl border border-slate-100 shadow-2xs flex flex-col justify-between">
+                    <div>
+                      <h5 class="font-bold text-gray-600 text-[10px] mb-3 flex justify-between">
+                        <span>การตรวจเยี่ยมร่วมกับเภสัชกร</span>
+                        <span id="db-rx-period-lbl" class="text-blue-500 font-semibold">(ทั้งปีงบประมาณ)</span>
+                      </h5>
+                      <div class="flex items-center gap-4 py-2">
+                        <div class="relative flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 text-lg border border-emerald-100">
+                          <i class="fas fa-prescription-bottle-alt"></i>
+                        </div>
+                        <div>
+                          <div class="text-xl font-black text-gray-800" id="db-rx-rate">0%</div>
+                          <div class="text-[9px] text-gray-400 font-semibold" id="db-rx-count-lbl">เยี่ยมร่วมกับเภสัชกร 0 จาก 0 ครั้ง</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-3 mt-3 grid grid-cols-2 gap-2 text-center">
+                      <div class="p-1.5 bg-slate-50 rounded-lg">
+                        <div class="text-xs font-bold text-slate-700" id="db-total-visits">0</div>
+                        <div class="text-[8px] text-gray-400 font-bold uppercase">จำนวนครั้งที่ตรวจเยี่ยม</div>
+                      </div>
+                      <div class="p-1.5 bg-slate-50 rounded-lg">
+                        <div class="text-xs font-bold text-slate-700" id="db-total-active-comm">0</div>
+                        <div class="text-[8px] text-gray-400 font-bold uppercase">จำนวนศูนย์ที่เปิดทั้งหมด</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto rounded-xl border border-gray-100">
+                <table class="min-w-full bg-white text-xs">
+                  <thead class="bg-gray-50">
+                    <tr class="text-slate-500 font-bold border-b">
+                      <th class="py-2.5 px-3 text-left">ศูนย์สุขภาพชุมชน</th>
+                      <th class="py-2.5 px-3 text-center">ไตรมาส 1</th>
+                      <th class="py-2.5 px-3 text-center">ไตรมาส 2</th>
+                      <th class="py-2.5 px-3 text-center">ไตรมาส 3</th>
+                      <th class="py-2.5 px-3 text-center">ไตรมาส 4</th>
+                      <th class="py-2.5 px-3 text-center font-semibold">คะแนนเฉลี่ย</th>
+                    </tr>
+                  </thead>
+                  <tbody id="scores-table-body" class="divide-y divide-gray-100"></tbody>
+                  <tfoot id="scores-table-footer" class="bg-gray-50 font-bold border-t"></tfoot>
+                </table>
+              </div>
+              <div class="mt-4 text-xs text-gray-400 font-medium flex items-center gap-1.5">
+                <span>*สัญลักษณ์ 💊 หมายถึงมีเภสัชกรเข้าร่วมตรวจประเมินด้วย</span>
+              </div>
+            </div>
+
+            <!-- Photos Gallery Tab Content -->
+            <div id="results-photos-tab" class="hidden no-print">
+              <div class="flex flex-wrap gap-4 mb-4 items-center">
+                <div class="flex items-center space-x-2">
+                  <label for="gallery-community-filter" class="font-bold text-gray-600 text-xs">เลือกชุมชน:</label>
+                  <select id="gallery-community-filter" onchange="renderGallery()" class="text-xs rounded-lg border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 pl-2 pr-8"></select>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <label for="gallery-quarter-filter" class="font-bold text-gray-600 text-xs">เลือกไตรมาส:</label>
+                  <select id="gallery-quarter-filter" onchange="renderGallery()" class="text-xs rounded-lg border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 pl-2 pr-8">
+                    <option value="all">ทุกไตรมาส</option>
+                    <option value="1">ไตรมาส 1</option>
+                    <option value="2">ไตรมาส 2</option>
+                    <option value="3">ไตรมาส 3</option>
+                    <option value="4">ไตรมาส 4</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="results-gallery" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ================= VIEW: ADMIN PANEL ================= -->
+        <section id="view-admin" class="view-section space-y-6 view-hidden">
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
+              <div>
+                <h3 class="font-bold text-gray-800 text-lg">จัดการระบบ (แอดมิน)</h3>
+                <p class="text-xs text-gray-400 mt-0.5">เปิดปิดการใช้งานรายปีงบประมาณของศูนย์สุขภาพชุมชน</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <label for="admin-fiscal-year" class="font-bold text-gray-600 text-xs">ปีงบประมาณ:</label>
+                <select id="admin-fiscal-year" onchange="loadAdminData()" class="text-xs rounded-lg border border-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 pl-2.5 pr-8"></select>
+              </div>
+            </div>
+
+            <div class="space-y-6">
+              <div class="border rounded-xl p-4">
+                <h4 class="font-bold text-gray-700 text-sm mb-3">สถานะการเปิดใช้งานชุมชน</h4>
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                  <table class="min-w-full text-xs bg-white">
+                    <thead class="bg-gray-50 border-b">
+                      <tr class="text-gray-500 font-semibold text-left">
+                        <th class="p-2">ศูนย์สุขภาพชุมชน</th>
+                        <th class="p-2 text-center w-28">เปิดใช้งาน</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-community-status-table" class="divide-y text-slate-700"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <footer class="mt-6 pt-5 border-t border-gray-100 flex justify-end">
+              <button id="admin-save-btn" onclick="saveAdminChanges()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center gap-1.5">
+                <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า
+              </button>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ================= VIEW: USER PROFILE ================= -->
+        <section id="view-profile" class="view-section space-y-6 view-hidden">
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-md mx-auto">
+            <h3 class="font-bold text-gray-800 text-lg mb-1">ข้อมูลผู้ใช้งาน</h3>
+            <p class="text-xs text-gray-400 mb-6">ตรวจสอบหรืออัปเดตสิทธิ์ความปลอดภัยส่วนตัว</p>
+
+            <form id="profile-form" onsubmit="saveProfileChanges(event)" class="space-y-4 text-xs font-semibold text-gray-600">
+              <div>
+                <label class="block mb-1.5 uppercase tracking-wide">ชื่อบัญชีผู้ใช้งาน (แก้ไขไม่ได้)</label>
+                <input type="text" id="prof-username" readonly
+                  class="w-full px-3.5 py-2.5 bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed rounded-xl text-xs">
+              </div>
+
+              <div>
+                <label for="prof-emoji" class="block mb-1.5 uppercase tracking-wide">ตัวการ์ตูน Emoji ของคุณ</label>
+                <select id="prof-emoji" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs">
+                  <option value="👩‍⚕️">👩‍⚕️</option>
+                  <option value="👨‍⚕️">👨‍⚕️</option>
+                  <option value="🩺">🩺</option>
+                  <option value="🦷">🦷</option>
+                  <option value="💊">💊</option>
+                  <option value="🧑‍⚕️">🧑‍⚕️</option>
+                  <option value="👑">👑</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="prof-position" class="block mb-1.5 uppercase tracking-wide">ตำแหน่งงาน</label>
+                <select id="prof-position" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs">
+                  <option value="พยาบาล">พยาบาล</option>
+                  <option value="นักสุขศึกษา">นักสุขศึกษา</option>
+                  <option value="หัวหน้าพยาบาล">หัวหน้าพยาบาล</option>
+                  <option value="นักวิชาการสาธารณสุข">นักวิชาการสาธารณสุข</option>
+                  <option value="เภสัชกร">เภสัชกร</option>
+                  <option value="แพทย์">แพทย์</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="prof-new-pass" class="block mb-1.5 uppercase tracking-wide">รหัสผ่านใหม่ (ระบุเมื่อต้องการเปลี่ยนเท่านั้น - PIN 4 หลัก)</label>
+                <input type="password" id="prof-new-pass" pattern="\d{4}" maxlength="4" placeholder="เช่น 9876"
+                  class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs text-center font-bold tracking-widest">
+              </div>
+
+              <div>
+                <label for="prof-confirm-pass" class="block mb-1.5 uppercase tracking-wide">ยืนยันรหัสผ่านใหม่</label>
+                <input type="password" id="prof-confirm-pass" placeholder="กรอกยืนยันรหัส 4 หลัก"
+                  class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs text-center font-bold tracking-widest">
+              </div>
+
+              <button type="submit" id="prof-save-btn"
+                class="w-full mt-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition">
+                บันทึกการตั้งค่า
+              </button>
+            </form>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= DEMO PHOTO LIGHTBOX MODAL ================= -->
+  <div id="photo-modal" class="fixed inset-0 z-50 bg-black/70 hidden items-center justify-center p-4 no-print" onclick="closePhotoModal()">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+      <img id="photo-modal-img" src="" alt="Preview" class="w-full max-h-80 object-contain bg-slate-100">
+      <div class="p-4 flex items-center justify-between">
+        <div>
+          <p id="photo-modal-title" class="text-sm font-bold text-gray-800"></p>
+          <p id="photo-modal-sub" class="text-xs text-gray-400"></p>
+        </div>
+        <button onclick="closePhotoModal()" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC (MOCK SERVER + SPA) ================= -->
+  <script>
+    const DEMO_STORAGE_KEY = 'minihhc_demo_db_v1';
+    const DEMO_SESSION_KEY = 'minihhc_demo_session_v1';
+
+    const THAI_MONTHS_SHORT = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+    const THAI_MONTHS_LONG = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+
+    // 45-Item Assessment Structure (Extracted directly from production codebase)
+    const questionDatabase = {
+      "องค์ประกอบที่ 1: สถานที่ตั้ง": [
+        { id: 'Score_1_1', text: '1. มีป้ายชื่อศูนย์สุขภาพชุมชนติดไว้ชัดเจน', type: 'normal' },
+        { id: 'Score_1_2', text: '2. สภาพแวดล้อมสะอาด เหมาะสมกับการให้บริการด้านสุขภาพ', type: 'normal' },
+        { id: 'Score_1_3', text: '3. สถานที่มีความมั่นคง แข็งแรง มีความปลอดภัย', type: 'normal' },
+        { id: 'Score_1_4', text: '4. ประชาชนสามารถใช้บริการที่ศูนย์สุขภาพชุมชนได้อย่างสะดวก', type: 'normal' },
+        { id: 'Score_1_5', text: '5. เป็นสถานที่เหมาะแก่การให้บริการด้านสุขภาพอนามัย', type: 'normal' }
+      ],
+      "องค์ประกอบที่ 2: ผู้ให้บริการ": [
+        { id: 'Score_2_1', text: '1. ศูนย์สุขภาพชุมชนมี อสส.ไม่น้อยกว่า 3 คน และสามารถทำงานเป็นทีม', type: 'normal' },
+        { id: 'Score_2_2', text: '2. อสส. ได้รับการสอนและฝึกอบรมอย่างต่อเนื่อง', type: 'normal' },
+        { id: 'Score_2_3', text: '3. อสส. มีสุขภาพอนามัย สมบูรณ์แข็งแรงและปฏิบัติตนเป็นตัวอย่างที่ดี', type: 'normal' },
+        { id: 'Score_2_4', text: '4. อสส. ทำหน้าที่เป็นผู้ประสานงานที่ดี', type: 'normal' },
+        { id: 'Score_2_5', text: '5. อสส. มีการติดต่อประสานงานกับศูนย์บริการสาธารณสุขอย่างต่อเนื่อง', type: 'normal' }
+      ],
+      "องค์ประกอบที่ 3: บริหารจัดการ": [
+        { id: 'Score_3_1', text: '1. มีการบริหารจัดการโดยเน้นการมีส่วนร่วมขององค์กรต่างๆ', type: 'normal' },
+        { id: 'Score_3_2', text: '2. มีการจัดทำบัญชีวัสดุ-ครุภัณฑ์', type: 'normal' },
+        { id: 'Score_3_2_1', text: '2.1 ตู้บานเลื่อนกระจก', type: 'equipment' },
+        { id: 'Score_3_2_2', text: '2.2 โต๊ะทำงาน', type: 'equipment' },
+        { id: 'Score_3_2_3', text: '2.3 เก้าอี้ทำงาน', type: 'equipment' },
+        { id: 'Score_3_2_4', text: '2.4 เก้าอี้เหล็กพับได้', type: 'equipment' },
+        { id: 'Score_3_2_5', text: '2.5 เครื่องชั่งน้ำหนัก', type: 'equipment' },
+        { id: 'Score_3_2_6', text: '2.6 เครื่องวัดความดันโลหิต', type: 'equipment' },
+        { id: 'Score_3_2_7', text: '2.7 กล่องใส่เครื่องมือสเตนเลส', type: 'equipment' },
+        { id: 'Score_3_2_8', text: '2.8 อับสำลีสเตนเลส', type: 'equipment' },
+        { id: 'Score_3_2_9', text: '2.9 ปากคีบสเตนเลสชนิดมีเขี้ยว', type: 'equipment' },
+        { id: 'Score_3_2_10', text: '2.10 ปากคีบสเตนเลสชนิดไม่มีเขี้ยว', type: 'equipment' },
+        { id: 'Score_3_2_11', text: '2.11 กรรไกรสเตนเลส', type: 'equipment' },
+        { id: 'Score_3_2_12', text: '2.12 ปรอทวัดไข้อินฟราเรด', type: 'equipment' },
+        { id: 'Score_3_2_13', text: '2.13 ป้ายชื่อศูนย์สุขภาพชุมชน', type: 'equipment' },
+        { id: 'Score_3_2_14', text: '2.14 ป้ายพลาสติกบอกเวลาบริการ', type: 'equipment' },
+        { id: 'Score_3_3', text: '3. มีการจดบันทึกการเบิกจ่ายยาและเวชภัณฑ์', type: 'normal' },
+        { id: 'Score_3_4', text: '4. มีการบำรุงรักษา เวชภัณฑ์ ครุภัณฑ์', type: 'normal' },
+        { id: 'Score_3_5', text: '5. การตรวจสอบวันหมดอายุของยาและเวชภัณฑ์', type: 'normal' },
+        { id: 'Score_3_6', text: '6. มีการเก็บรักษายาที่เหมาะสม', type: 'normal' },
+        { id: 'Score_3_7', text: '7. มีป้ายกิจกรรม ป้ายบอกเวลา และลงชื่อผู้ปฏิบัติงาน', type: 'normal' },
+        { id: 'Score_3_8', text: '8. มีการบันทึกข้อมูลการให้บริการอย่างถูกต้อง', type: 'normal' }
+      ],
+      "องค์ประกอบที่ 4: ด้านการบริการ": [
+        { id: 'Score_4_1', text: '1. มีสื่อความรู้ด้านสุขภาพ แผ่นพับ คู่มือ', type: 'normal' },
+        { id: 'Score_4_2', text: '2. มีบอร์ดประชาสัมพันธ์ข้อมูลข่าวสาร', type: 'normal' },
+        { id: 'Score_4_3', text: '3. อสส. ให้บริการด้านคำปรึกษา แนะนำ', type: 'normal' },
+        { id: 'Score_4_4', text: '4. อสส. ให้บริการรักษาพยาบาลเบื้องต้น', type: 'normal' },
+        { id: 'Score_4_5', text: '5. อสส. ให้บริการสาธารณสุขพื้นฐานด้านการปฐมพยาบาล', type: 'normal' },
+        { id: 'Score_4_6', text: '6. อสส. สามารถให้บริการชั่งน้ำหนักเด็ก ผู้ใหญ่', type: 'normal' },
+        { id: 'Score_4_7', text: '7. อสส. สามารถเฝ้าสังเกตพัฒนาการของเด็กได้', type: 'normal' },
+        { id: 'Score_4_8', text: '8. อสส. มีการเฝ้าระวังโรคติดต่อในชุมชน', type: 'normal' },
+        { id: 'Score_4_9', text: '9. อสส. สามารถช่วยดูแลสุขภาพช่องปากได้', type: 'normal' },
+        { id: 'Score_4_10', text: '10. อสส. สามารถให้บริการคัดกรองภาวะความเจ็บป่วย', type: 'normal' },
+        { id: 'Score_4_11', text: '11. อสส. สามารถส่งต่อผู้ป่วยตามสิทธิ', type: 'normal' },
+        { id: 'Score_4_12', text: '12. มีการให้บริการอื่นๆตามสภาวการณ์ของชุมชน', type: 'normal' },
+        { id: 'Score_4_13', text: '13. อสส. มีการจัดกิจกรรมสาธารณสุข', type: 'normal' }
+      ]
+    };
+
+    const ALL_SCORE_IDS = Object.values(questionDatabase).flat().map(q => q.id);
+
+    function createMockSvgDataUri(title, subtitle, bgHex) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="360" viewBox="0 0 600 360">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${bgHex}"/><stop offset="100%" stop-color="#1e293b"/></linearGradient></defs>
+        <rect width="600" height="360" fill="url(#g)"/>
+        <circle cx="510" cy="70" r="90" fill="rgba(255,255,255,0.08)"/>
+        <rect x="40" y="210" width="520" height="110" rx="16" fill="rgba(255,255,255,0.12)"/>
+        <text x="65" y="255" fill="#ffffff" font-family="sans-serif" font-size="24" font-weight="bold">${title}</text>
+        <text x="65" y="290" fill="#cbd5e1" font-family="sans-serif" font-size="16">${subtitle}</text>
+        <text x="65" y="80" fill="#ffffff" font-family="sans-serif" font-size="14" font-weight="bold">DEMO MOCK PHOTO (OFFLINE SAFE)</text>
+      </svg>`;
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+
+    function buildSeedScoreMap(defaultScore, overrides = {}) {
+      const map = {};
+      ALL_SCORE_IDS.forEach(id => { map[id] = defaultScore; });
+      return Object.assign(map, overrides);
+    }
+
+    function createInitialSeedDB() {
+      const fy = '69';
+      return {
+        users: [
+          { userId: 'DEMO_U001', username: 'demo_admin', pin: '9999', emoji: '👑', role: 'Admin', position: 'หัวหน้าพยาบาล' },
+          { userId: 'DEMO_U002', username: 'demo_nurse', pin: '1111', emoji: '👩‍⚕️', role: 'User', position: 'พยาบาล' },
+          { userId: 'DEMO_U003', username: 'demo_pharm', pin: '2222', emoji: '💊', role: 'User', position: 'เภสัชกร' }
+        ],
+        communities: [
+          { id: 'DEMO_C01', name: 'ศสช. ชุมชนร่วมใจพัฒนา (จำลอง)' },
+          { id: 'DEMO_C02', name: 'ศสช. ชุมชนบึงใหญ่ (จำลอง)' },
+          { id: 'DEMO_C03', name: 'ศสช. ชุมชนคลองเตยพัฒนา (จำลอง)' },
+          { id: 'DEMO_C04', name: 'ศสช. ชุมชนวัดไผ่เงิน (จำลอง)' },
+          { id: 'DEMO_C05', name: 'ศสช. ชุมชนริมคลอง [ปิด] (จำลอง)' }
+        ],
+        communityStatus: [
+          { communityId: 'DEMO_C01', fiscalYear: fy, active: true },
+          { communityId: 'DEMO_C02', fiscalYear: fy, active: true },
+          { communityId: 'DEMO_C03', fiscalYear: fy, active: true },
+          { communityId: 'DEMO_C04', fiscalYear: fy, active: true },
+          { communityId: 'DEMO_C05', fiscalYear: fy, active: false }
+        ],
+        visits: [
+          { visitId: 'DEMO_V01', communityId: 'DEMO_C01', userId: 'DEMO_U001', dateISO: '2025-11-12', fiscalYear: fy, quarter: 1, status: 'Completed' },
+          { visitId: 'DEMO_V02', communityId: 'DEMO_C02', userId: 'DEMO_U002', dateISO: '2025-11-18', fiscalYear: fy, quarter: 1, status: 'Completed' },
+          { visitId: 'DEMO_V03', communityId: 'DEMO_C03', userId: 'DEMO_U002', dateISO: '2025-12-03', fiscalYear: fy, quarter: 1, status: 'Completed' },
+          { visitId: 'DEMO_V04', communityId: 'DEMO_C04', userId: 'DEMO_U003', dateISO: '2025-12-10', fiscalYear: fy, quarter: 1, status: 'Completed' },
+          { visitId: 'DEMO_V05', communityId: 'DEMO_C01', userId: 'DEMO_U003', dateISO: '2026-01-20', fiscalYear: fy, quarter: 2, status: 'Completed' },
+          { visitId: 'DEMO_V06', communityId: 'DEMO_C02', userId: 'DEMO_U002', dateISO: '2026-02-14', fiscalYear: fy, quarter: 2, status: 'Completed' },
+          { visitId: 'DEMO_V07', communityId: 'DEMO_C03', userId: 'DEMO_U002', dateISO: '2026-02-22', fiscalYear: fy, quarter: 2, status: 'Scheduled' },
+          { visitId: 'DEMO_V08', communityId: 'DEMO_C04', userId: 'DEMO_U001', dateISO: '2026-05-15', fiscalYear: fy, quarter: 3, status: 'Scheduled' }
+        ],
+        scores: [
+          {
+            VisitID: 'DEMO_V01',
+            ...buildSeedScoreMap(3), // 135 (ดีเยี่ยม)
+            PharmacistPresent: true,
+            StaffNotFound: false,
+            Remarks: 'สถานที่สะอาดมาก ครุภัณฑ์ครบถ้วนพร้อมใช้งาน อสส. ปฏิบัติงานเข้มแข็ง'
+          },
+          {
+            VisitID: 'DEMO_V02',
+            ...buildSeedScoreMap(2, { Score_1_1: 3, Score_1_2: 3, Score_2_1: 3, Score_2_2: 3, Score_4_1: 3, Score_4_2: 3, Score_4_3: 3, Score_4_4: 3, Score_4_5: 3, Score_4_6: 3, Score_4_7: 3, Score_4_8: 3 }), // 102 (ดี)
+            PharmacistPresent: false,
+            StaffNotFound: false,
+            Remarks: 'การให้บริการดี ควรอัปเดตทะเบียนครุภัณฑ์ให้เป็นปัจจุบัน'
+          },
+          {
+            VisitID: 'DEMO_V03',
+            ...buildSeedScoreMap(2, { Score_3_2_5: 1, Score_3_2_6: 1, Score_3_2_12: 1, Score_3_4: 1, Score_3_5: 1 }), // 85 (พอใช้)
+            PharmacistPresent: false,
+            StaffNotFound: false,
+            Remarks: 'เครื่องวัดความดันโลหิตต้องส่งซ่อมบำรุง'
+          },
+          {
+            VisitID: 'DEMO_V04',
+            ...buildSeedScoreMap(1, { Score_1_1: 2, Score_1_2: 2, Score_2_1: 2, Score_4_1: 2, Score_4_3: 2 }), // 50 (ควรปรับปรุง)
+            PharmacistPresent: true,
+            StaffNotFound: false,
+            Remarks: 'จัดทำป้ายแสดงเวลาบริการเพิ่มเติมและจัดเก็บเวชภัณฑ์ให้เป็นระเบียบ'
+          },
+          {
+            VisitID: 'DEMO_V05',
+            ...buildSeedScoreMap(3, { Score_3_2_8: 2, Score_3_2_9: 2, Score_3_6: 2 }), // 132 (ดี)
+            PharmacistPresent: true,
+            StaffNotFound: false,
+            Remarks: 'เภสัชกรร่วมตรวจคลังยาและวันหมดอายุเรียบร้อยดี'
+          },
+          {
+            VisitID: 'DEMO_V06',
+            ...buildSeedScoreMap(0),
+            PharmacistPresent: false,
+            StaffNotFound: true,
+            Remarks: 'ลงพื้นที่ตามกำหนดแล้วไม่พบ อสส. ประจำศูนย์ (ศูนย์ปิดชั่วคราว)'
+          }
+        ],
+        photos: [
+          { visitId: 'DEMO_V01', photoId: 'DEMO_P01', url: createMockSvgDataUri('ศสช. ชุมชนร่วมใจพัฒนา', 'ไตรมาส 1/2569 - ตรวจเยี่ยมสถานที่และคลังยา', '#059669') },
+          { visitId: 'DEMO_V02', photoId: 'DEMO_P02', url: createMockSvgDataUri('ศสช. ชุมชนบึงใหญ่', 'ไตรมาส 1/2569 - กิจกรรมคัดกรองสุขภาพเบื้องต้น', '#2563eb') },
+          { visitId: 'DEMO_V05', photoId: 'DEMO_P03', url: createMockSvgDataUri('ศสช. ชุมชนร่วมใจพัฒนา', 'ไตรมาส 2/2569 - ตรวจเยี่ยมร่วมกับเภสัชกร', '#4f46e5') }
+        ]
+      };
+    }
+
+    function getDB() {
+      const raw = localStorage.getItem(DEMO_STORAGE_KEY);
+      if (raw) {
+        try { return JSON.parse(raw); } catch (e) {}
+      }
+      const seed = createInitialSeedDB();
+      localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(seed));
+      return seed;
+    }
+
+    function saveDB(db) {
+      localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(db));
+    }
+
+    function resetDemoData() {
+      if (confirm('ต้องการรีเซ็ตข้อมูลจำลองทั้งหมดกลับเป็นค่าเริ่มต้นหรือไม่?')) {
+        const seed = createInitialSeedDB();
+        saveDB(seed);
+        alert('รีเซ็ตข้อมูลจำลองเรียบร้อยแล้ว');
+        if (state.currentUser) switchView(state.currentView);
+      }
+    }
+
+    function formatThaiDateShort(isoStr) {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return `${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`;
+    }
+
+    function formatThaiDateLong(isoStr) {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return `${d.getDate()} ${THAI_MONTHS_LONG[d.getMonth()]} ${d.getFullYear() + 543}`;
+    }
+
+    function getGrade(score) {
+      if (score >= 135) return 'ดีเยี่ยม';
+      if (score >= 101) return 'ดี';
+      if (score >= 68) return 'พอใช้';
+      if (score >= 35) return 'ควรปรับปรุง';
+      if (score === 1) return 'ไม่พบ อสส.';
+      if (score > 1) return 'ควรปรับปรุง';
+      return '-';
+    }
+
+    function checkIfGuest(userId) {
+      return !userId || String(userId).toUpperCase() === 'U_GUEST' || String(userId).toUpperCase().includes('GUEST');
+    }
+
+    // Mock Server mimicking Code.gs API 1:1
+    const mockServer = {
+      verifyPassword: function({ userId, pin }) {
+        const db = getDB();
+        const user = db.users.find(u => u.userId === userId);
+        if (!user) return { success: false, message: 'ไม่พบผู้ใช้งานนี้' };
+        if (String(user.pin) === String(pin).trim()) {
+          return {
+            success: true,
+            message: 'เข้าสู่ระบบสำเร็จ (โหมดจำลอง)',
+            user: { userId: user.userId, username: user.username, role: user.role, emoji: user.emoji, position: user.position }
+          };
+        }
+        return { success: false, message: 'รหัส PIN ไม่ถูกต้อง' };
+      },
+
+      getHomeVisitData: function(fiscalYear) {
+        const db = getDB();
+        const commMap = Object.fromEntries(db.communities.map(c => [c.id, c.name]));
+        const userMap = Object.fromEntries(db.users.map(u => [u.userId, u.username]));
+        const out = { q1: [], q2: [], q3: [], q4: [] };
+
+        db.visits.filter(v => String(v.fiscalYear) === String(fiscalYear)).forEach(v => {
+          const qKey = 'q' + v.quarter;
+          if (out[qKey]) {
+            out[qKey].push({
+              communityName: commMap[v.communityId] || 'ไม่พบชื่อชุมชน',
+              username: userMap[v.userId] || 'ผู้ตรวจเยี่ยม',
+              date: formatThaiDateShort(v.dateISO),
+              rawDate: v.dateISO,
+              status: v.status
+            });
+          }
+        });
+        for (const k in out) out[k].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+        return out;
+      },
+
+      getVisitScheduleData: function(fiscalYear) {
+        const db = getDB();
+        const activeIds = new Set(db.communityStatus.filter(s => String(s.fiscalYear) === String(fiscalYear) && s.active).map(s => s.communityId));
+        const userMap = Object.fromEntries(db.users.map(u => [u.userId, u.username]));
+        const targetCommunities = db.communities.filter(c => activeIds.has(c.id));
+
+        const yearBE = parseInt(fiscalYear, 10) + 2500;
+        const yearAD = yearBE - 543;
+        const quarterInfo = [
+          { key: 'q1', quarter: 1, title: `ไตรมาส 1/${fiscalYear}`, months: `ตุลาคม - ธันวาคม ${yearBE - 1}`, minDate: `${yearAD - 1}-10-01`, maxDate: `${yearAD - 1}-12-31` },
+          { key: 'q2', quarter: 2, title: `ไตรมาส 2/${fiscalYear}`, months: `มกราคม - มีนาคม ${yearBE}`, minDate: `${yearAD}-01-01`, maxDate: `${yearAD}-03-31` },
+          { key: 'q3', quarter: 3, title: `ไตรมาส 3/${fiscalYear}`, months: `เมษายน - มิถุนายน ${yearBE}`, minDate: `${yearAD}-04-01`, maxDate: `${yearAD}-06-30` },
+          { key: 'q4', quarter: 4, title: `ไตรมาส 4/${fiscalYear}`, months: `กรกฎาคม - กันยายน ${yearBE}`, minDate: `${yearAD}-07-01`, maxDate: `${yearAD}-09-30` }
+        ];
+
+        const quarters = { q1: [], q2: [], q3: [], q4: [] };
+        for (const key in quarters) {
+          quarters[key] = targetCommunities.map(c => ({ CommunityID: c.id, CommunityName: c.name, VisitDate: null, Username: null }));
+        }
+
+        db.visits.filter(v => String(v.fiscalYear) === String(fiscalYear)).forEach(v => {
+          const list = quarters['q' + v.quarter];
+          if (!list) return;
+          const item = list.find(c => c.CommunityID === v.communityId);
+          if (item) {
+            item.VisitDate = formatThaiDateShort(v.dateISO);
+            item.Username = userMap[v.userId] || v.userId;
+          }
+        });
+        return { quarters, quarterInfo };
+      },
+
+      saveVisitDate: function(data) {
+        if (checkIfGuest(data.userId)) throw new Error('สิทธิ์ผู้ใช้ของท่านคือ แขกรับเชิญ ไม่สามารถสร้างหรือแก้ไขข้อมูลได้');
+        const db = getDB();
+        const existing = db.visits.find(v => v.communityId === data.communityId && String(v.fiscalYear) === String(data.fiscalYear) && String(v.quarter) === String(data.quarter));
+        if (existing) {
+          existing.dateISO = data.visitDate;
+          existing.userId = data.userId;
+        } else {
+          db.visits.push({
+            visitId: 'DEMO_V' + Date.now(),
+            communityId: data.communityId,
+            userId: data.userId,
+            dateISO: data.visitDate,
+            fiscalYear: String(data.fiscalYear),
+            quarter: Number(data.quarter),
+            status: 'Scheduled'
+          });
+        }
+        saveDB(db);
+        return 'บันทึกกำหนดวันตรวจเยี่ยมสำเร็จ (Demo)';
+      },
+
+      getVisitsForScoring: function(fiscalYear) {
+        const db = getDB();
+        const commMap = Object.fromEntries(db.communities.map(c => [c.id, c.name]));
+        const scoredIds = new Set(db.scores.map(s => s.VisitID));
+        const visitsByQuarter = { q1: [], q2: [], q3: [], q4: [] };
+
+        db.visits.filter(v => String(v.fiscalYear) === String(fiscalYear)).forEach(v => {
+          const qKey = 'q' + v.quarter;
+          if (visitsByQuarter[qKey]) {
+            visitsByQuarter[qKey].push({
+              visitId: v.visitId,
+              communityName: commMap[v.communityId] || 'ไม่พบชื่อชุมชน',
+              visitDate: formatThaiDateLong(v.dateISO),
+              status: scoredIds.has(v.visitId) ? 'เสร็จสิ้น' : 'รอลงคะแนน'
+            });
+          }
+        });
+        return visitsByQuarter;
+      },
+
+      getScoringFormData: function(visitId) {
+        const db = getDB();
+        const visit = db.visits.find(v => v.visitId === visitId);
+        if (!visit) throw new Error('ไม่พบข้อมูลการตรวจเยี่ยม');
+        const comm = db.communities.find(c => c.id === visit.communityId);
+        const score = db.scores.find(s => s.VisitID === visitId) || null;
+        const photos = db.photos.filter(p => p.visitId === visitId);
+        return {
+          visitId: visit.visitId,
+          communityName: comm ? comm.name : 'ไม่พบชื่อชุมชน',
+          visitDate: formatThaiDateLong(visit.dateISO),
+          scores: score,
+          photos: photos
+        };
+      },
+
+      saveScoresAndPhotos: function(formData) {
+        if (checkIfGuest(formData.userId)) return { success: false, message: 'สิทธิ์ผู้ใช้ของท่านคือ แขกรับเชิญ ไม่สามารถสร้างหรือแก้ไขข้อมูลได้' };
+        const db = getDB();
+        const { visitId, scores, photos } = formData;
+        const staffNotFound = scores.StaffNotFound === 'true' || scores.StaffNotFound === true;
+
+        const record = {
+          VisitID: visitId,
+          PharmacistPresent: scores.PharmacistPresent === 'true' || scores.PharmacistPresent === true,
+          StaffNotFound: staffNotFound,
+          Remarks: scores.Remarks || ''
+        };
+        ALL_SCORE_IDS.forEach(id => {
+          record[id] = staffNotFound ? 0 : (parseInt(scores[id], 10) || 0);
+        });
+
+        const idx = db.scores.findIndex(s => s.VisitID === visitId);
+        if (idx !== -1) db.scores[idx] = record;
+        else db.scores.push(record);
+
+        const visit = db.visits.find(v => v.visitId === visitId);
+        if (visit) visit.status = 'Completed';
+
+        if (photos && photos.length > 0) {
+          photos.forEach((p, i) => {
+            db.photos.push({
+              visitId: visitId,
+              photoId: 'DEMO_P_' + Date.now() + '_' + i,
+              url: `data:${p.mimeType};base64,${p.data}`
+            });
+          });
+        }
+        saveDB(db);
+        return { success: true, message: 'บันทึกคะแนนและภาพถ่ายสำเร็จ (Demo)' };
+      },
+
+      getResultsData: function(fiscalYear) {
+        const db = getDB();
+        const visitsYear = db.visits.filter(v => String(v.fiscalYear) === String(fiscalYear));
+        const statusMap = new Map(db.communityStatus.filter(s => String(s.fiscalYear) === String(fiscalYear)).map(s => [s.communityId, s.active]));
+
+        const scores = db.communities.map(comm => {
+          const isActive = statusMap.get(comm.id) === true;
+          const tpl = {
+            name: comm.name,
+            status: isActive ? 'active' : 'inactive',
+            q1: { score: 0, grade: '-', pharmacistPresent: false },
+            q2: { score: 0, grade: '-', pharmacistPresent: false },
+            q3: { score: 0, grade: '-', pharmacistPresent: false },
+            q4: { score: 0, grade: '-', pharmacistPresent: false },
+            avg: { score: 0, grade: '-' }
+          };
+
+          if (!isActive) {
+            ['q1', 'q2', 'q3', 'q4', 'avg'].forEach(k => { tpl[k].grade = 'ไม่เปิดให้บริการ'; });
+            return tpl;
+          }
+
+          let total = 0, count = 0;
+          visitsYear.filter(v => v.communityId === comm.id).forEach(v => {
+            const sRow = db.scores.find(s => s.VisitID === v.visitId);
+            if (!sRow) return;
+            let totalScore = 0;
+            if (sRow.StaffNotFound) {
+              totalScore = 1;
+            } else {
+              ALL_SCORE_IDS.forEach(id => { totalScore += (parseInt(sRow[id], 10) || 0); });
+            }
+            if (totalScore > 0) {
+              tpl['q' + v.quarter] = { score: totalScore, grade: getGrade(totalScore), pharmacistPresent: !!sRow.PharmacistPresent };
+              if (totalScore > 1) { total += totalScore; count++; }
+            }
+          });
+          if (count > 0) {
+            const avgScore = Math.round(total / count);
+            tpl.avg = { score: avgScore, grade: getGrade(avgScore) };
+          }
+          return tpl;
+        });
+
+        const averages = {
+          q1: { total: 0, count: 0, score: 0, grade: '-' },
+          q2: { total: 0, count: 0, score: 0, grade: '-' },
+          q3: { total: 0, count: 0, score: 0, grade: '-' },
+          q4: { total: 0, count: 0, score: 0, grade: '-' },
+          overall: { total: 0, count: 0, score: 0, grade: '-' }
+        };
+        scores.forEach(c => {
+          if (c.status === 'active') {
+            ['q1', 'q2', 'q3', 'q4'].forEach(q => { if (c[q].score > 1) { averages[q].total += c[q].score; averages[q].count++; } });
+            if (c.avg.score > 1) { averages.overall.total += c.avg.score; averages.overall.count++; }
+          }
+        });
+        ['q1', 'q2', 'q3', 'q4'].forEach(q => {
+          if (averages[q].count > 0) {
+            const avg = Math.round(averages[q].total / averages[q].count);
+            averages[q].score = avg;
+            averages[q].grade = getGrade(avg);
+          }
+        });
+        if (averages.overall.count > 0) {
+          const avg = Math.round(averages.overall.total / averages.overall.count);
+          averages.overall.score = avg;
+          averages.overall.grade = getGrade(avg);
+        }
+
+        const photosByComm = {};
+        db.photos.forEach(p => {
+          const visit = visitsYear.find(v => v.visitId === p.visitId);
+          if (!visit) return;
+          const comm = db.communities.find(c => c.id === visit.communityId);
+          if (!comm) return;
+          if (!photosByComm[comm.name]) photosByComm[comm.name] = [];
+          photosByComm[comm.name].push({ url: p.url, viewUrl: p.url, name: comm.name, quarter: visit.quarter });
+        });
+
+        return { scores, photos: photosByComm, averages };
+      },
+
+      getAdminData: function(fiscalYear) {
+        const db = getDB();
+        const statuses = db.communityStatus
+          .filter(s => String(s.fiscalYear) === String(fiscalYear))
+          .map(s => [s.communityId, s.fiscalYear, s.active]);
+        return { communities: db.communities, statuses };
+      },
+
+      saveAdminData: function(data) {
+        if (checkIfGuest(data.userId)) return { success: false, message: 'สิทธิ์ผู้ใช้ของท่านคือ แขกรับเชิญ ไม่สามารถแก้ไขข้อมูลได้' };
+        const db = getDB();
+        db.communityStatus = db.communityStatus.filter(s => String(s.fiscalYear) !== String(data.fiscalYear));
+        data.statuses.forEach(([communityId, fiscalYear, active]) => {
+          db.communityStatus.push({ communityId, fiscalYear: String(fiscalYear), active: !!active });
+        });
+        saveDB(db);
+        return { success: true, message: 'บันทึกการตั้งค่าสถานะชุมชนสำเร็จ (Demo)' };
+      },
+
+      getUserProfile: function(userId) {
+        const db = getDB();
+        const u = db.users.find(x => x.userId === userId);
+        if (u) return { username: u.username, emoji: u.emoji, position: u.position };
+        return state.currentUser || { username: 'demo_user', emoji: '👩‍⚕️', position: 'พยาบาล' };
+      },
+
+      updateUserProfile: function(data) {
+        if (checkIfGuest(data.userId)) return { success: false, message: 'สิทธิ์ผู้ใช้ของท่านคือ แขกรับเชิญ ไม่สามารถแก้ไขข้อมูลได้' };
+        const db = getDB();
+        const u = db.users.find(x => x.userId === data.userId);
+        const role = u ? u.role : (state.currentUser ? state.currentUser.role : 'User');
+        if (u) {
+          u.emoji = data.emoji;
+          u.position = data.position;
+          if (data.newPassword && data.newPassword.length === 4) u.pin = data.newPassword;
+          saveDB(db);
+        }
+        return {
+          success: true,
+          message: 'บันทึกข้อมูลส่วนตัวสำเร็จ (Demo)',
+          user: { userId: data.userId, username: data.username, role, emoji: data.emoji, position: data.position }
+        };
+      }
+    };
+
+    const state = {
+      currentUser: null,
+      currentView: 'home',
+      homeData: {},
+      scheduleData: {},
+      visitListData: {},
+      resultsData: {},
+      adminData: {},
+      newPhotos: [],
+      existingPhotoCount: 0,
+      currentDashboardPeriod: 'yearly',
+      currentScheduleQuarter: 1
+    };
+
+    function callServer(method, params, successCallback, failureCallback) {
+      setTimeout(() => {
+        try {
+          const res = mockServer[method](...params);
+          successCallback(res);
+        } catch (err) {
+          if (failureCallback) failureCallback(err);
+          else alert('เกิดข้อผิดพลาด: ' + err.message);
+        }
+      }, 150);
+    }
+
+    function normalizeUserObj(user) {
+      if (!user) return null;
+      const isGuest = user.isGuest || String(user.role).toLowerCase() === 'guest';
+      const rawRole = String(user.role || '').toLowerCase();
+      let role = 'User';
+      if (rawRole === 'admin') role = 'Admin';
+      else if (isGuest) role = 'Guest';
+      return {
+        userId: user.userId || (isGuest ? 'U_GUEST' : 'DEMO_U001'),
+        username: user.username || (isGuest ? 'แขกรับเชิญ (Guest)' : 'demo_user'),
+        role,
+        isGuest,
+        emoji: user.emoji || (role === 'Admin' ? '👑' : role === 'Guest' ? '👥' : '👩‍⚕️'),
+        position: user.position || (role === 'Admin' ? 'หัวหน้าพยาบาล' : role === 'Guest' ? 'ผู้เยี่ยมชมภายนอก' : 'พยาบาล')
+      };
+    }
+
+    window.onload = function() {
+      setupFiscalYearDropdowns();
+      const saved = localStorage.getItem(DEMO_SESSION_KEY);
+      if (saved) {
+        try {
+          state.currentUser = normalizeUserObj(JSON.parse(saved));
+          initializeMainApp();
+          return;
+        } catch (e) { localStorage.removeItem(DEMO_SESSION_KEY); }
+      }
+      switchView('login');
+    };
+
+    function setupFiscalYearDropdowns() {
+      const yearSelects = ['home-fiscal-year', 'schedule-fiscal-year', 'list-fiscal-year', 'results-fiscal-year', 'admin-fiscal-year'];
+      const startYearBE = 2567;
+      const endYearBE = 2575;
+      yearSelects.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = '';
+        for (let year = endYearBE; year >= startYearBE; year--) {
+          select.add(new Option(year, year.toString().slice(-2)));
+        }
+        select.value = '69'; // Default to Seed FY 2569 so Demo data is immediately visible
+      });
+    }
+
+    function loginWithMockSSO(roleType) {
+      const db = getDB();
+      const target = roleType === 'admin' ? db.users[0] : db.users[1];
+      const user = normalizeUserObj(target);
+      state.currentUser = user;
+      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user));
+      initializeMainApp();
+    }
+
+    function handleMockPinLogin(event) {
+      event.preventDefault();
+      const userId = document.getElementById('demo-pin-user').value;
+      const pin = document.getElementById('demo-pin-input').value;
+      callServer('verifyPassword', [{ userId, pin }], function(res) {
+        if (res.success) {
+          state.currentUser = normalizeUserObj(res.user);
+          localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(state.currentUser));
+          initializeMainApp();
+        } else {
+          alert(res.message);
+        }
+      });
+    }
+
+    function loginAsGuest() {
+      const guestUser = normalizeUserObj({
+        userId: 'U_GUEST',
+        username: 'แขกรับเชิญ (Guest)',
+        role: 'Guest',
+        isGuest: true,
+        position: 'ผู้เยี่ยมชมภายนอก',
+        emoji: '👥'
+      });
+      state.currentUser = guestUser;
+      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(guestUser));
+      initializeMainApp();
+    }
+
+    function handleLogout() {
+      state.currentUser = null;
+      localStorage.removeItem(DEMO_SESSION_KEY);
+      switchView('login');
+    }
+
+    function initializeMainApp() {
+      document.getElementById('aside-user-emoji').textContent = state.currentUser.emoji;
+      document.getElementById('aside-user-name').textContent = state.currentUser.username;
+      document.getElementById('aside-user-role').textContent = state.currentUser.role;
+      document.getElementById('aside-user-position').textContent = state.currentUser.position;
+
+      const statusContainer = document.getElementById('header-user-status');
+      if (state.currentUser.role === 'Guest') {
+        statusContainer.innerHTML = `<span class="bg-amber-50 text-amber-700 px-3 py-1 rounded-full border border-amber-100 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>Guest Mode (แสดงเท่านั้น)</span>`;
+      } else {
+        statusContainer.innerHTML = `<span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-100 flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Demo Mock Connected</span>`;
+      }
+
+      const adminNav = document.getElementById('nav-admin');
+      const scheduleNav = document.getElementById('nav-schedule');
+      const listNav = document.getElementById('nav-list');
+      const profileNav = document.getElementById('nav-profile');
+
+      if (state.currentUser.role === 'Admin') {
+        adminNav.classList.remove('hidden');
+        scheduleNav.classList.remove('hidden');
+        listNav.classList.remove('hidden');
+        profileNav.classList.remove('hidden');
+      } else if (state.currentUser.role === 'Guest') {
+        adminNav.classList.add('hidden');
+        scheduleNav.classList.add('hidden');
+        listNav.classList.add('hidden');
+        profileNav.classList.add('hidden');
+      } else {
+        adminNav.classList.add('hidden');
+        scheduleNav.classList.remove('hidden');
+        listNav.classList.remove('hidden');
+        profileNav.classList.remove('hidden');
+      }
+      switchView('home');
+    }
+
+    function switchView(viewName) {
+      state.currentView = viewName;
+      document.querySelectorAll('.view-section').forEach(v => v.classList.add('view-hidden'));
+      document.getElementById('auth-layout').classList.add('view-hidden');
+      document.getElementById('main-layout').classList.add('view-hidden');
+
+      if (viewName === 'login') {
+        document.getElementById('auth-layout').classList.remove('view-hidden');
+        return;
+      }
+
+      document.getElementById('main-layout').classList.remove('view-hidden');
+      document.getElementById(`view-${viewName}`).classList.remove('view-hidden');
+
+      document.querySelectorAll('aside nav a').forEach(nav => nav.classList.remove('nav-active'));
+      const activeNav = document.getElementById(`nav-${viewName}`);
+      if (activeNav) activeNav.classList.add('nav-active');
+
+      const titles = {
+        home: 'หน้าหลัก / ปฏิทินรวม',
+        schedule: 'กำหนดวันเข้าประเมิน',
+        list: 'ลงคะแนนตรวจเยี่ยม',
+        scoring: 'แบบลงคะแนนประเมิน',
+        results: 'สรุปรายงานและภาพถ่าย',
+        admin: 'จัดการระบบแอดมิน',
+        profile: 'ประวัติส่วนตัว'
+      };
+      document.getElementById('page-title').textContent = titles[viewName] || 'ตรวจระบบศูนย์ฯ';
+
+      if (viewName === 'home') loadHomeData();
+      else if (viewName === 'schedule') loadScheduleData();
+      else if (viewName === 'list') loadVisitList();
+      else if (viewName === 'results') loadResults();
+      else if (viewName === 'admin') loadAdminData();
+      else if (viewName === 'profile') loadProfileData();
+    }
+
+    function loadHomeData() {
+      const fiscalYear = document.getElementById('home-fiscal-year').value;
+      document.getElementById('welcome-name').textContent = state.currentUser.username;
+      document.getElementById('welcome-emoji').textContent = state.currentUser.emoji;
+      const container = document.getElementById('home-visit-list');
+      container.innerHTML = `<div class="text-center py-6 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>`;
+
+      callServer('getHomeVisitData', [fiscalYear], function(data) {
+        state.homeData = data;
+        showQuarterHome(1);
+      });
+    }
+
+    function showQuarterHome(q) {
+      document.querySelectorAll('#home-quarter-tabs button').forEach((btn, idx) => {
+        const active = idx + 1 === q;
+        btn.classList.toggle('border-blue-500', active);
+        btn.classList.toggle('text-blue-600', active);
+        btn.classList.toggle('font-bold', active);
+        btn.classList.toggle('text-gray-500', !active);
+        btn.classList.toggle('border-transparent', !active);
+      });
+
+      const container = document.getElementById('home-visit-list');
+      container.innerHTML = '';
+      const visits = state.homeData['q' + q] || [];
+      if (visits.length === 0) {
+        container.innerHTML = `<p class="text-center text-gray-400 text-xs py-6">ไม่พบแผนการตรวจในไตรมาสนี้</p>`;
+        return;
+      }
+      visits.forEach(v => {
+        const isDone = v.status === 'Completed';
+        const badge = isDone
+          ? `<span class="bg-green-50 text-green-700 border border-green-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> เรียบร้อย</span>`
+          : `<span class="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-clock"></i> รอประเมิน</span>`;
+        container.innerHTML += `
+          <div class="py-3 flex items-center justify-between text-xs hover:bg-gray-50 rounded-xl px-2 transition">
+            <div class="space-y-1">
+              <p class="font-bold text-gray-800 text-sm">${v.communityName}</p>
+              <p class="text-gray-400">วันตรวจ: ${v.date} | ผู้รับผิดชอบ: ${v.username}</p>
+            </div>
+            <div>${badge}</div>
+          </div>`;
+      });
+    }
+
+    function loadScheduleData() {
+      const fiscalYear = document.getElementById('schedule-fiscal-year').value;
+      const container = document.getElementById('schedule-cards');
+      container.innerHTML = `<div class="text-center py-6 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>`;
+
+      const guestWarn = document.getElementById('schedule-guest-warning');
+      guestWarn.classList.toggle('hidden', state.currentUser.role !== 'Guest');
+
+      callServer('getVisitScheduleData', [fiscalYear], function(data) {
+        state.scheduleData = data;
+        container.innerHTML = '';
+
+        data.quarterInfo.forEach(qInfo => {
+          const communities = data.quarters[qInfo.key] || [];
+          let rowsHtml = '';
+          communities.forEach(c => {
+            const isGuest = state.currentUser.role === 'Guest';
+            let dateInputBlock = '';
+            if (c.VisitDate) {
+              dateInputBlock = `
+                <div class="flex items-center justify-center gap-2">
+                  <div>
+                    <span class="font-bold text-gray-800 text-xs">${c.VisitDate}</span><br>
+                    <span class="text-[10px] text-gray-400">โดย: ${c.Username}</span>
+                  </div>
+                  ${!isGuest ? `<button onclick="editScheduleDate('${c.CommunityID}', '${qInfo.quarter}', '${qInfo.minDate}', '${qInfo.maxDate}')" class="text-xs text-blue-600 hover:underline"><i class="fa-solid fa-pen-to-square"></i></button>` : ''}
+                </div>`;
+            } else {
+              dateInputBlock = `
+                <input type="date" min="${qInfo.minDate}" max="${qInfo.maxDate}" ${isGuest ? 'disabled' : ''}
+                  onchange="saveScheduleDateChange(event, '${c.CommunityID}', '${qInfo.quarter}')"
+                  class="text-xs border border-gray-200 rounded-lg p-1.5 focus:ring-blue-500 focus:border-blue-500 outline-none">`;
+            }
+            rowsHtml += `
+              <tr class="border-b hover:bg-gray-50/50">
+                <td class="p-3 font-semibold text-gray-700 text-xs">${c.CommunityName}</td>
+                <td class="p-3 text-center" id="sch-${c.CommunityID}-${qInfo.quarter}">${dateInputBlock}</td>
+              </tr>`;
+          });
+          if (communities.length === 0) {
+            rowsHtml = `<tr><td colspan="2" class="p-4 text-center text-gray-400 text-xs">ไม่พบศูนย์ที่เปิดใช้งานในปีงบประมาณนี้</td></tr>`;
+          }
+          container.innerHTML += `
+            <div id="sch-quarter-block-${qInfo.quarter}" class="sch-quarter-block border border-gray-100 rounded-xl overflow-hidden shadow-sm hidden">
+              <div class="bg-gray-50/80 px-4 py-3 border-b flex justify-between items-center">
+                <h4 class="font-bold text-gray-800 text-sm">${qInfo.title}</h4>
+                <span class="text-[10px] text-gray-500">${qInfo.months}</span>
+              </div>
+              <table class="min-w-full text-left bg-white text-xs">
+                <thead>
+                  <tr class="bg-gray-100/50 text-slate-500 font-semibold border-b">
+                    <th class="p-2.5">ศูนย์สุขภาพชุมชน</th>
+                    <th class="p-2.5 text-center w-48">วันที่เข้าตรวจเยี่ยม</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+              </table>
+            </div>`;
+        });
+        switchScheduleQuarter(state.currentScheduleQuarter || 1);
+      });
+    }
+
+    function switchScheduleQuarter(q) {
+      state.currentScheduleQuarter = q;
+      document.querySelectorAll('.sch-quarter-block').forEach(b => b.classList.add('hidden'));
+      const activeBlock = document.getElementById(`sch-quarter-block-${q}`);
+      if (activeBlock) activeBlock.classList.remove('hidden');
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`sch-q${i}-tab`);
+        if (btn) {
+          btn.className = (i === q)
+            ? "flex-1 py-2 text-center text-xs font-bold text-blue-600 border-b-2 border-blue-500"
+            : "flex-1 py-2 text-center text-xs font-semibold text-gray-500 border-b-2 border-transparent";
+        }
+      }
+    }
+
+    function editScheduleDate(commId, quarter, minDate, maxDate) {
+      const cell = document.getElementById(`sch-${commId}-${quarter}`);
+      if (!cell) return;
+      cell.innerHTML = `<input type="date" min="${minDate}" max="${maxDate}" onchange="saveScheduleDateChange(event, '${commId}', '${quarter}')" class="text-xs border border-gray-200 rounded-lg p-1.5 focus:ring-blue-500 focus:border-blue-500 outline-none">`;
+    }
+
+    function saveScheduleDateChange(event, communityId, quarter) {
+      const visitDate = event.target.value;
+      if (!visitDate) return;
+      event.target.disabled = true;
+      const fiscalYear = document.getElementById('schedule-fiscal-year').value;
+      callServer('saveVisitDate', [{ communityId, visitDate, userId: state.currentUser.userId, fiscalYear, quarter }], function(msg) {
+        alert(msg);
+        loadScheduleData();
+      });
+    }
+
+    function loadVisitList() {
+      const fiscalYear = document.getElementById('list-fiscal-year').value;
+      const container = document.getElementById('visit-list-quarters');
+      container.innerHTML = `<div class="text-center py-6 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>`;
+
+      callServer('getVisitsForScoring', [fiscalYear], function(data) {
+        state.visitListData = data;
+        container.innerHTML = '';
+        [
+          { key: 'q1', title: 'ไตรมาส 1' }, { key: 'q2', title: 'ไตรมาส 2' },
+          { key: 'q3', title: 'ไตรมาส 3' }, { key: 'q4', title: 'ไตรมาส 4' }
+        ].forEach(q => {
+          const list = data[q.key] || [];
+          let listHtml = '';
+          list.forEach(v => {
+            const isDone = v.status === 'เสร็จสิ้น';
+            const badge = isDone
+              ? `<span class="text-xs font-bold text-green-600 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> ${v.status}</span>`
+              : `<span class="text-xs font-semibold text-amber-600 flex items-center gap-1"><i class="fa-solid fa-clock"></i> ${v.status}</span>`;
+            listHtml += `
+              <div onclick="openScoring('${v.visitId}')" class="flex items-center justify-between p-3 rounded-xl border border-gray-100 cursor-pointer shadow-sm transition hover:border-blue-300 ${isDone ? 'bg-green-50/50 hover:bg-green-50' : 'bg-white hover:bg-gray-50'}">
+                <div class="space-y-1">
+                  <p class="font-bold text-gray-800 text-sm">${v.communityName}</p>
+                  <p class="text-[10px] text-gray-400">วันที่ตรวจ: ${v.visitDate}</p>
+                </div>
+                <div>${badge}</div>
+              </div>`;
+          });
+          if (list.length === 0) listHtml = `<p class="text-center text-gray-400 text-xs py-4">ไม่มีนัดประเมินในไตรมาสนี้</p>`;
+          container.innerHTML += `
+            <div class="space-y-3">
+              <h4 class="font-bold text-gray-700 text-xs uppercase tracking-wider border-l-4 border-blue-500 pl-2">${q.title}</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${listHtml}</div>
+            </div>`;
+        });
+      });
+    }
+
+    function openScoring(visitId) {
+      document.getElementById('app-loading').classList.remove('hidden');
+      callServer('getScoringFormData', [visitId], function(data) {
+        document.getElementById('app-loading').classList.add('hidden');
+        document.getElementById('scoring-visit-id').value = data.visitId;
+        document.getElementById('score-community-name').textContent = data.communityName;
+        document.getElementById('score-visit-date').textContent = `กำหนดเข้าประเมิน: ${data.visitDate}`;
+
+        buildScoringFormQuestions();
+        document.getElementById('not-found-checkbox').checked = false;
+        toggleNotFound(false);
+        document.getElementById('remarks').value = '';
+        document.querySelector('input[name="PharmacistPresent"][value="false"]').checked = true;
+        document.getElementById('photo-upload').value = '';
+        document.getElementById('photo-previews').innerHTML = '';
+
+        state.newPhotos = [];
+        state.existingPhotoCount = data.photos ? data.photos.length : 0;
+
+        const existingDiv = document.getElementById('existing-photos');
+        existingDiv.innerHTML = '';
+        if (data.photos) {
+          data.photos.forEach(p => {
+            existingDiv.innerHTML += `<div class="relative rounded-lg overflow-hidden border"><img src="${p.url}" class="w-full h-16 object-cover"></div>`;
+          });
+        }
+
+        if (data.scores) {
+          const isNotFound = data.scores.StaffNotFound === true || data.scores.StaffNotFound === 'true';
+          if (isNotFound) {
+            document.getElementById('not-found-checkbox').checked = true;
+            toggleNotFound(true);
+          } else {
+            for (const key in data.scores) {
+              if (key.startsWith('Score_')) {
+                const radio = document.querySelector(`input[name="${key}"][value="${data.scores[key]}"]`);
+                if (radio) radio.checked = true;
+              }
+            }
+          }
+          document.getElementById('remarks').value = data.scores.Remarks || '';
+          const isPharm = data.scores.PharmacistPresent === true || data.scores.PharmacistPresent === 'true';
+          document.querySelector(`input[name="PharmacistPresent"][value="${isPharm}"]`).checked = true;
+        }
+
+        const isGuest = state.currentUser.role === 'Guest';
+        document.getElementById('not-found-checkbox').disabled = isGuest;
+        document.getElementById('btn-full-score').disabled = isGuest;
+        document.getElementById('remarks').disabled = isGuest;
+        document.querySelectorAll('input[name="PharmacistPresent"]').forEach(r => r.disabled = isGuest);
+        document.getElementById('photo-upload').disabled = isGuest;
+        document.getElementById('scoring-submit-container').classList.toggle('hidden', isGuest);
+        document.getElementById('scoring-guest-disabled-msg').classList.toggle('hidden', !isGuest);
+        if (isGuest) toggleFormControlsDisabled(true);
+
+        switchView('scoring');
+      });
+    }
+
+    function buildScoringFormQuestions() {
+      const container = document.getElementById('scoring-questions');
+      container.innerHTML = '';
+      const labels = {
+        normal: ['ควรปรับปรุง (1)', 'พอใช้ (2)', 'ดี (3)'],
+        equipment: ['ไม่มี (1)', 'ไม่พร้อมใช้ (2)', 'พร้อมใช้ (3)']
+      };
+      for (const sectName in questionDatabase) {
+        let questHtml = '';
+        questionDatabase[sectName].forEach(q => {
+          const cur = labels[q.type];
+          questHtml += `
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2.5 border-b border-gray-100 gap-2">
+              <p class="text-xs text-gray-700 sm:w-2/3 leading-normal">${q.text}</p>
+              <div class="score-btn-group flex space-x-2 shrink-0">
+                <input type="radio" id="${q.id}_1" name="${q.id}" value="1" class="hidden" required>
+                <label for="${q.id}_1" class="cursor-pointer px-3 py-1 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-500 hover:border-blue-400 transition">${cur[0]}</label>
+                <input type="radio" id="${q.id}_2" name="${q.id}" value="2" class="hidden">
+                <label for="${q.id}_2" class="cursor-pointer px-3 py-1 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-500 hover:border-blue-400 transition">${cur[1]}</label>
+                <input type="radio" id="${q.id}_3" name="${q.id}" value="3" class="hidden">
+                <label for="${q.id}_3" class="cursor-pointer px-3 py-1 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-500 hover:border-blue-400 transition">${cur[2]}</label>
+              </div>
+            </div>`;
+        });
+        container.innerHTML += `
+          <div class="border border-gray-100 rounded-2xl p-4 shadow-sm">
+            <h4 class="font-bold text-slate-800 text-sm border-b pb-2 mb-3"><i class="fa-solid fa-list-check text-blue-500 mr-1.5"></i>${sectName}</h4>
+            <div class="space-y-1">${questHtml}</div>
+          </div>`;
+      }
+    }
+
+    function toggleFormControlsDisabled(disabled) {
+      document.querySelectorAll('input[type="radio"][name^="Score_"]').forEach(r => { r.disabled = disabled; });
+    }
+
+    function toggleNotFound(checked) {
+      const questionsDiv = document.getElementById('scoring-questions');
+      const fullScoreBtn = document.getElementById('btn-full-score');
+      document.querySelectorAll('input[type="radio"][name^="Score_"]').forEach(r => {
+        r.disabled = checked;
+        r.required = !checked;
+        if (checked) r.checked = false;
+      });
+      questionsDiv.style.opacity = checked ? '0.5' : '1';
+      questionsDiv.style.pointerEvents = checked ? 'none' : 'auto';
+      fullScoreBtn.disabled = checked || (state.currentUser && state.currentUser.role === 'Guest');
+    }
+
+    function setFullScore() {
+      document.getElementById('not-found-checkbox').checked = false;
+      toggleNotFound(false);
+      document.querySelectorAll('input[type="radio"][name^="Score_"][value="3"]').forEach(r => { r.checked = true; });
+    }
+
+    function previewPhotos(event) {
+      const files = event.target.files;
+      if (files.length + state.existingPhotoCount > 10) {
+        alert('คุณสามารถอัปโหลดรูปภาพรวมสูงสุด 10 รูป');
+        event.target.value = '';
+        return;
+      }
+      state.newPhotos = [];
+      const previewDiv = document.getElementById('photo-previews');
+      previewDiv.innerHTML = '';
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          previewDiv.innerHTML += `<div class="relative rounded-lg overflow-hidden border"><img src="${e.target.result}" class="w-full h-16 object-cover"></div>`;
+          state.newPhotos.push({ name: file.name, mimeType: file.type, data: e.target.result.split(',')[1] });
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function saveScoringData(event) {
+      event.preventDefault();
+      const saveBtn = document.getElementById('btn-save-score');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> กำลังบันทึก...`;
+
+      const visitId = document.getElementById('scoring-visit-id').value;
+      const formData = new FormData(event.target);
+      const scores = { VisitID: visitId };
+      for (const [key, val] of formData.entries()) scores[key] = val;
+      scores.StaffNotFound = document.getElementById('not-found-checkbox').checked ? 'true' : 'false';
+
+      callServer('saveScoresAndPhotos', [{ visitId, scores, photos: state.newPhotos, userId: state.currentUser.userId }], function(res) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล`;
+        alert(res.message);
+        if (res.success) switchView('list');
+      });
+    }
+
+    function loadResults() {
+      const fiscalYear = document.getElementById('results-fiscal-year').value;
+      document.getElementById('app-loading').classList.remove('hidden');
+      callServer('getResultsData', [fiscalYear], function(data) {
+        state.resultsData = data;
+        document.getElementById('app-loading').classList.add('hidden');
+        renderScoresTable();
+        setupCommunityFilter();
+        renderGallery();
+        changeDashboardPeriod(state.currentDashboardPeriod || 'yearly');
+        toggleInactiveRows(document.getElementById('hide-inactive-toggle').checked);
+      });
+    }
+
+    function changeDashboardPeriod(period) {
+      state.currentDashboardPeriod = period;
+      ['yearly', 'q1', 'q2', 'q3', 'q4'].forEach(p => {
+        const btn = document.getElementById('db-period-' + p);
+        if (btn) btn.className = p === period ? "px-2.5 py-1 rounded-md bg-white text-gray-800 shadow-xs transition" : "px-2.5 py-1 rounded-md transition hover:bg-gray-300/40";
+      });
+      calculateAndRenderDashboard(period);
+    }
+
+    function calculateAndRenderDashboard(period) {
+      if (!state.resultsData || !state.resultsData.scores) return;
+      const activeComms = state.resultsData.scores.filter(c => c.status === 'active');
+      let totalVisits = 0, rxVisits = 0, gradedCommsCount = 0;
+      const gradeCounts = { 'ดีเยี่ยม': 0, 'ดี': 0, 'พอใช้': 0, 'ควรปรับปรุง': 0, 'ไม่พบ อสส.': 0 };
+
+      activeComms.forEach(comm => {
+        if (period === 'yearly') {
+          const grade = comm.avg.grade;
+          if (grade && grade !== '-' && grade !== 'ไม่เปิดให้บริการ' && gradeCounts[grade] !== undefined) {
+            gradeCounts[grade]++;
+            gradedCommsCount++;
+          }
+          ['q1', 'q2', 'q3', 'q4'].forEach(q => {
+            if (comm[q] && comm[q].score > 0) {
+              totalVisits++;
+              if (comm[q].pharmacistPresent) rxVisits++;
+            }
+          });
+        } else {
+          const qData = comm[period];
+          if (qData && qData.score > 0) {
+            totalVisits++;
+            if (qData.pharmacistPresent) rxVisits++;
+            if (qData.grade && gradeCounts[qData.grade] !== undefined) {
+              gradeCounts[qData.grade]++;
+              gradedCommsCount++;
+            }
+          }
+        }
+      });
+
+      document.getElementById('db-total-visits').textContent = totalVisits;
+      document.getElementById('db-total-active-comm').textContent = activeComms.length;
+      const rxRate = totalVisits > 0 ? Math.round((rxVisits / totalVisits) * 100) : 0;
+      document.getElementById('db-rx-rate').textContent = rxRate + '%';
+      document.getElementById('db-rx-count-lbl').textContent = `เยี่ยมร่วมกับเภสัชกร ${rxVisits} จาก ${totalVisits} ครั้ง`;
+      const labelText = period === 'yearly' ? '(ทั้งปีงบประมาณ)' : `(ไตรมาส ${period.replace('q', '')})`;
+      document.getElementById('db-grade-period-lbl').textContent = labelText;
+      document.getElementById('db-rx-period-lbl').textContent = labelText;
+
+      const gradeStatsContainer = document.getElementById('db-grade-stats');
+      gradeStatsContainer.innerHTML = '';
+      [
+        { key: 'ดีเยี่ยม', colorClass: 'bg-emerald-500' },
+        { key: 'ดี', colorClass: 'bg-blue-500' },
+        { key: 'พอใช้', colorClass: 'bg-yellow-500' },
+        { key: 'ควรปรับปรุง', colorClass: 'bg-orange-500' },
+        { key: 'ไม่พบ อสส.', colorClass: 'bg-slate-400' }
+      ].forEach(cfg => {
+        const count = gradeCounts[cfg.key];
+        const percent = gradedCommsCount > 0 ? Math.round((count / gradedCommsCount) * 100) : 0;
+        gradeStatsContainer.innerHTML += `
+          <div class="text-[10px] font-semibold text-gray-600 flex items-center justify-between">
+            <span class="w-16">${cfg.key}</span>
+            <div class="flex-1 mx-2 bg-gray-100 h-2 rounded-full overflow-hidden">
+              <div class="${cfg.colorClass} h-full transition-all duration-300" style="width: ${percent}%"></div>
+            </div>
+            <span class="w-16 text-right text-gray-500 font-bold">${count} ศูนย์ (${percent}%)</span>
+          </div>`;
+      });
+    }
+
+    function switchResultTab(tab) {
+      document.getElementById('results-scores-tab').style.display = tab === 'scores' ? 'block' : 'none';
+      document.getElementById('results-photos-tab').style.display = tab === 'photos' ? 'block' : 'none';
+      document.getElementById('res-tab-scores').className = tab === 'scores'
+        ? "whitespace-nowrap py-3 px-4 border-b-2 font-bold text-sm text-blue-600 border-blue-500"
+        : "whitespace-nowrap py-3 px-4 border-b-2 font-semibold text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300";
+      document.getElementById('res-tab-photos').className = tab === 'photos'
+        ? "whitespace-nowrap py-3 px-4 border-b-2 font-bold text-sm text-blue-600 border-blue-500"
+        : "whitespace-nowrap py-3 px-4 border-b-2 font-semibold text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300";
+    }
+
+    function renderScoresTable() {
+      const tbody = document.getElementById('scores-table-body');
+      const tfoot = document.getElementById('scores-table-footer');
+      tbody.innerHTML = '';
+      tfoot.innerHTML = '';
+      if (state.resultsData.scores.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">ไม่พบข้อมูลคะแนนในระบบ</td></tr>`;
+        return;
+      }
+      state.resultsData.scores.forEach(comm => {
+        const isInactive = comm.status === 'inactive';
+        const rowClass = isInactive ? 'bg-gray-50 text-gray-400 status-inactive-row' : 'hover:bg-gray-50/50 transition';
+        tbody.innerHTML += `
+          <tr class="${rowClass}">
+            <td class="p-3 font-semibold ${isInactive ? 'text-gray-400' : 'text-gray-700'}">${comm.name}</td>
+            ${[comm.q1, comm.q2, comm.q3, comm.q4, comm.avg].map(d => generateGradeCellHtml(d)).join('')}
+          </tr>`;
+      });
+      const avg = state.resultsData.averages;
+      if (avg) {
+        tfoot.innerHTML = `
+          <tr class="text-slate-800">
+            <td class="p-3">คะแนนเฉลี่ยรวม</td>
+            ${[avg.q1, avg.q2, avg.q3, avg.q4, avg.overall].map(d => generateGradeCellHtml(d)).join('')}
+          </tr>`;
+      }
+    }
+
+    function generateGradeCellHtml(data) {
+      if (!data) return `<td class="p-3 text-center">-</td>`;
+      const isPharm = data.pharmacistPresent ? '<span class="text-blue-500 text-xs ml-1" title="มีเภสัชกรร่วมตรวจ">💊</span>' : '';
+      let badgeClass = 'bg-gray-100 text-gray-600';
+      if (data.grade === 'ดีเยี่ยม') badgeClass = 'grade-excellent';
+      else if (data.grade === 'ดี') badgeClass = 'grade-good';
+      else if (data.grade === 'พอใช้') badgeClass = 'grade-fair';
+      else if (data.grade === 'ควรปรับปรุง' || data.grade === 'ไม่พบ อสส.') badgeClass = 'grade-improve';
+      else if (data.grade === 'ไม่เปิดให้บริการ') badgeClass = 'grade-closed';
+
+      let cellVal = '-';
+      if (data.score > 0) {
+        cellVal = `<span class="font-bold text-gray-800 text-sm">${data.score}</span>${isPharm}<br><span class="inline-block text-[9px] font-semibold px-2 py-0.5 mt-0.5 rounded-full ${badgeClass}">${data.grade}</span>`;
+      } else if (data.grade !== '-') {
+        cellVal = `<span class="inline-block text-[9px] font-semibold px-2 py-0.5 rounded-full ${badgeClass}">${data.grade}</span>`;
+      }
+      return `<td class="p-3 text-center leading-tight">${cellVal}</td>`;
+    }
+
+    function toggleInactiveRows(checked) {
+      document.querySelectorAll('.status-inactive-row').forEach(row => { row.style.display = checked ? 'none' : ''; });
+    }
+
+    function setupCommunityFilter() {
+      const select = document.getElementById('gallery-community-filter');
+      select.innerHTML = '<option value="all">ทุกชุมชน</option>';
+      state.resultsData.scores.forEach(comm => {
+        if (comm.status === 'active' && state.resultsData.photos[comm.name]) select.add(new Option(comm.name, comm.name));
+      });
+    }
+
+    function renderGallery() {
+      const container = document.getElementById('results-gallery');
+      const commFilter = document.getElementById('gallery-community-filter').value;
+      const qFilter = document.getElementById('gallery-quarter-filter').value;
+      container.innerHTML = '';
+
+      let photoList = [];
+      for (const commName in state.resultsData.photos) photoList.push(...state.resultsData.photos[commName]);
+      if (commFilter !== 'all') photoList = photoList.filter(p => p.name === commFilter);
+      if (qFilter !== 'all') photoList = photoList.filter(p => String(p.quarter) === qFilter);
+
+      if (photoList.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400 text-xs">ไม่พบรูปภาพประกอบการประเมิน</div>`;
+        return;
+      }
+      photoList.forEach(p => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'text-left block bg-gray-50 border rounded-xl overflow-hidden shadow-sm group hover:border-blue-400 transition';
+        card.onclick = () => openPhotoModal(p.url, p.name, `ไตรมาส ${p.quarter}`);
+        card.innerHTML = `
+          <div class="w-full h-24 overflow-hidden bg-gray-200 flex items-center justify-center">
+            <img src="${p.url}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200">
+          </div>
+          <div class="p-2 text-[10px] text-gray-600 font-semibold truncate bg-white border-t">${p.name} (Q${p.quarter})</div>`;
+        container.appendChild(card);
+      });
+    }
+
+    function openPhotoModal(url, title, sub) {
+      document.getElementById('photo-modal-img').src = url;
+      document.getElementById('photo-modal-title').textContent = title;
+      document.getElementById('photo-modal-sub').textContent = sub;
+      const modal = document.getElementById('photo-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closePhotoModal() {
+      const modal = document.getElementById('photo-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function loadAdminData() {
+      const fiscalYear = document.getElementById('admin-fiscal-year').value;
+      const statusTbody = document.getElementById('admin-community-status-table');
+      statusTbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-gray-400"><i class="fas fa-spinner fa-spin"></i> โหลดข้อมูลแอดมิน...</td></tr>`;
+      callServer('getAdminData', [fiscalYear], function(data) {
+        state.adminData = data;
+        statusTbody.innerHTML = '';
+        data.communities.forEach(comm => {
+          const isActive = data.statuses.some(s => s[0] === comm.id && s[2] === true);
+          statusTbody.innerHTML += `
+            <tr class="hover:bg-gray-50/50">
+              <td class="p-2.5 font-semibold text-gray-600">${comm.name}</td>
+              <td class="p-2.5 text-center">
+                <input type="checkbox" data-comm-id="${comm.id}" ${isActive ? 'checked' : ''} class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded border-gray-300">
+              </td>
+            </tr>`;
+        });
+      });
+    }
+
+    function saveAdminChanges() {
+      const saveBtn = document.getElementById('admin-save-btn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> กำลังบันทึก...`;
+      const fiscalYear = document.getElementById('admin-fiscal-year').value;
+      const statuses = [];
+      document.querySelectorAll('#admin-community-status-table input[type="checkbox"]').forEach(cb => {
+        statuses.push([cb.dataset.commId, fiscalYear, cb.checked]);
+      });
+      callServer('saveAdminData', [{ fiscalYear, statuses, userId: state.currentUser.userId }], function(res) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า`;
+        alert(res.message);
+        if (res.success) loadAdminData();
+      });
+    }
+
+    function loadProfileData() {
+      callServer('getUserProfile', [state.currentUser.userId], function(profile) {
+        document.getElementById('prof-username').value = profile.username;
+        document.getElementById('prof-emoji').value = profile.emoji || '👩‍⚕️';
+        document.getElementById('prof-position').value = profile.position || 'พยาบาล';
+        document.getElementById('prof-new-pass').value = '';
+        document.getElementById('prof-confirm-pass').value = '';
+      });
+    }
+
+    function saveProfileChanges(event) {
+      event.preventDefault();
+      const newPass = document.getElementById('prof-new-pass').value;
+      const confirmPass = document.getElementById('prof-confirm-pass').value;
+      if (newPass && newPass !== confirmPass) {
+        alert('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
+        return;
+      }
+      const saveBtn = document.getElementById('prof-save-btn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> กำลังบันทึก...`;
+      callServer('updateUserProfile', [{
+        userId: state.currentUser.userId,
+        username: document.getElementById('prof-username').value,
+        emoji: document.getElementById('prof-emoji').value,
+        position: document.getElementById('prof-position').value,
+        newPassword: newPass
+      }], function(res) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `บันทึกการตั้งค่า`;
+        alert(res.message);
+        if (res.success) {
+          state.currentUser = normalizeUserObj(res.user);
+          localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(state.currentUser));
+          initializeMainApp();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>21PASS SSO — Interactive Demo Mock-up (Pro-Health Data BKK South)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #f8f6f0;
+      --bg-surface: #ffffff;
+      --border-color: #e5e0d8;
+      --text-primary: #1c1917;
+      --text-secondary: #78716c;
+      --accent-green: #059669;
+      --accent-green-hover: #047857;
+      --accent-orange: #ea580c;
+      --accent-orange-hover: #c2410c;
+      --shadow-soft: 0 20px 40px -15px rgba(28, 25, 23, 0.08);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Prompt', sans-serif; }
+
+    body {
+      background-color: var(--bg-primary);
+      background-image:
+        radial-gradient(at 0% 0%, rgba(5, 150, 105, 0.07) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(234, 88, 12, 0.07) 0px, transparent 50%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      gap: 14px;
+    }
+
+    /* Demo Sandbox Toolbar */
+    .demo-toolbar {
+      width: 100%;
+      max-width: 950px;
+      background: #1c1917;
+      color: #fafaf9;
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 10px 25px -8px rgba(0, 0, 0, 0.25);
+    }
+
+    .demo-toolbar-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .demo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(5, 150, 105, 0.22);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .demo-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .demo-btn {
+      background: #292524;
+      color: #f5f5f4;
+      border: 1px solid #44403c;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .demo-btn:hover { background: #44403c; }
+    .demo-btn.primary { background: var(--accent-green); border-color: var(--accent-green); color: white; }
+    .demo-btn.primary:hover { background: var(--accent-green-hover); }
+    .demo-btn.warn { background: rgba(234, 88, 12, 0.2); border-color: var(--accent-orange); color: #fdba74; }
+
+    .demo-cheatsheet {
+      background: #292524;
+      border: 1px solid #44403c;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 11px;
+      color: #d6d3d1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+    }
+    .demo-cheatsheet code {
+      background: #1c1917;
+      color: #6ee7b7;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    /* Main Container */
+    .container {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      transition: max-width 0.35s ease-in-out;
+      position: relative;
+    }
+
+    .container.view-mobile { max-width: 440px; }
+    .container.view-pc { max-width: 950px; padding: 32px; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px dashed var(--border-color);
+      padding-bottom: 16px;
+    }
+
+    .brand-area { display: flex; align-items: center; gap: 12px; }
+
+    .hexagon-logo {
+      width: 54px;
+      height: 54px;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-orange));
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .hexagon-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .hexagon-fallback { color: white; font-weight: 700; font-size: 20px; }
+
+    .logo-title { font-size: 22px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+    .logo-title span { background: var(--accent-orange); color: white; font-size: 11px; padding: 2px 6px; border-radius: 6px; }
+    .logo-subtitle { font-size: 12px; color: var(--text-secondary); }
+
+    .header-controls { display: flex; align-items: center; gap: 8px; }
+    .header-btn {
+      background: #f0ebe1;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+    .header-btn:hover { background: var(--border-color); }
+
+    .view-nav {
+      display: flex;
+      gap: 6px;
+      background: #fbf9f4;
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      overflow-x: auto;
+    }
+    .nav-tab-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .nav-tab-btn.active {
+      background: white;
+      color: var(--accent-green);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .sso-context-banner {
+      background: #fff7ed;
+      border: 1px solid #ffedd5;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--accent-orange);
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .sso-context-banner.active { display: flex; }
+
+    .spa-view { display: none; flex-direction: column; gap: 16px; }
+    .spa-view.active { display: flex; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .full-width { grid-column: span 2; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+
+    label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
+    label.required::after { content: ' *'; color: var(--accent-orange); font-weight: bold; }
+
+    .input-field, .select-field, .filter-select {
+      background: #fbf9f4;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 12px;
+      border-radius: 8px;
+      outline: none;
+      font-size: 13px;
+      transition: var(--transition);
+      width: 100%;
+    }
+    .input-field:focus, .select-field:focus, .filter-select:focus {
+      border-color: var(--accent-green);
+      background: white;
+    }
+    .filter-select { background: white; }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .btn-green { background: var(--accent-green); color: white; }
+    .btn-green:hover { background: var(--accent-green-hover); }
+    .btn-orange-outline { background: transparent; color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+    .btn-orange-outline:hover { background: rgba(234, 88, 12, 0.08); }
+    .btn-secondary { background: #f0ebe1; color: var(--text-primary); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: var(--border-color); }
+    .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .btn-danger:hover { background: #dc2626; color: white; }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      background: #fbf9f4;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+    }
+    .view-pc .filters-grid { grid-template-columns: repeat(3, 1fr); }
+
+    .users-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+      gap: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 2px 4px 4px 2px;
+    }
+
+    .user-card {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 7px;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+      user-select: none;
+      position: relative;
+    }
+    .user-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent-green);
+      box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.15);
+    }
+
+    .avatar-container {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f3efe6;
+    }
+    .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-placeholder { font-size: 20px; font-weight: 700; color: var(--accent-green); }
+
+    .user-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    .user-meta { font-size: 10px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+
+    .face-badge-card {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    /* Modals */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(28, 25, 23, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+    .overlay.active { display: flex; }
+
+    .modal {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      max-width: 320px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+      padding: 4px;
+    }
+
+    .modal-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2.5px solid var(--accent-green);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f3efe6;
+      flex-shrink: 0;
+    }
+    .modal-user-name { font-size: 14px; font-weight: 700; text-align: center; }
+
+    .pin-display { display: flex; gap: 6px; justify-content: center; margin: 2px 0; }
+    .pin-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--border-color); transition: var(--transition); }
+    .pin-dot.active { background: var(--accent-green); border-color: var(--accent-green); transform: scale(1.15); }
+
+    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 216px; margin: 4px auto 0; }
+    .num-btn {
+      aspect-ratio: 1;
+      max-width: 52px;
+      max-height: 52px;
+      width: 100%;
+      border-radius: 50%;
+      background: #f8f6f0;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: var(--transition);
+      margin: 0 auto;
+    }
+    .num-btn:hover { background: var(--accent-green); color: white; border-color: var(--accent-green); }
+    .num-btn-utility { font-size: 12px; background: transparent; border-color: transparent; }
+
+    /* Camera Viewport */
+    .camera-viewport {
+      position: relative;
+      width: 210px;
+      height: 210px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #1c1917;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 3px solid var(--accent-green);
+      margin: 0 auto;
+    }
+    .camera-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    .face-guide-oval {
+      position: absolute;
+      width: 125px;
+      height: 155px;
+      border: 2px dashed rgba(255, 255, 255, 0.85);
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+    }
+    .face-radar-line {
+      position: absolute;
+      width: 125px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #10b981, transparent);
+      animation: scanRadar 1.8s ease-in-out infinite alternate;
+    }
+    @keyframes scanRadar {
+      0% { top: 28px; }
+      100% { top: 180px; }
+    }
+    .face-instruction-badge {
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: #ecfdf5;
+      color: var(--accent-green);
+      border: 1px solid #a7f3d0;
+      text-align: center;
+    }
+
+    /* Admin */
+    .admin-subtabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 2px; overflow-x: auto; }
+    .admin-tab-btn { background: transparent; border: none; color: var(--text-secondary); padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .admin-tab-btn.active { color: var(--accent-green); border-bottom-color: var(--accent-green); }
+    .admin-subcontent { display: none; flex-direction: column; gap: 12px; }
+    .admin-subcontent.active { display: flex; }
+
+    .table-container { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 14px; background: white; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    th { background: #fbf9f4; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); padding: 10px 12px; font-weight: 600; }
+    td { border-bottom: 1px solid var(--border-color); padding: 10px 12px; color: var(--text-primary); vertical-align: middle; }
+
+    .badge { display: inline-flex; padding: 2px 7px; border-radius: 9999px; font-size: 10px; font-weight: 600; }
+    .badge-pending { background: #fff7ed; color: var(--accent-orange); border: 1px solid #ffedd5; }
+    .badge-active { background: #ecfdf5; color: var(--accent-green); border: 1px solid #a7f3d0; }
+    .badge-suspended { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .config-card { background: #fbf9f4; border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .config-list-container { max-height: 170px; overflow-y: auto; background: white; border: 1px solid var(--border-color); border-radius: 8px; }
+    .config-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+
+    .status-msg { font-size: 12px; text-align: center; padding: 8px 12px; border-radius: 8px; display: none; width: 100%; }
+    .status-msg.error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; display: block; }
+    .status-msg.success { background: #ecfdf5; color: var(--accent-green); border: 1px solid #a7f3d0; display: block; }
+
+    .json-box {
+      background: #1c1917;
+      color: #a7f3d0;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 11px;
+      text-align: left;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Demo Control & Information Bar -->
+  <div class="demo-toolbar">
+    <div class="demo-toolbar-top">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span class="demo-badge">🧪 DEMO MOCK-UP (Offline Sandbox)</span>
+        <span style="font-size:12px; font-weight:600;">21PASS SSO — Pro-Health Data BKK South</span>
+      </div>
+      <div class="demo-actions">
+        <button class="demo-btn primary" type="button" onclick="openSsoSimulator()">🔗 จำลองการเชื่อมแอปปลายทาง (Test SSO Flow)</button>
+        <button class="demo-btn" type="button" onclick="toggleCheatsheet()">📋 ข้อมูลบัญชีจำลอง</button>
+        <button class="demo-btn warn" type="button" onclick="resetDemoData()">♻️ รีเซ็ตข้อมูล Demo</button>
+      </div>
+    </div>
+    <div class="demo-cheatsheet" id="demo-cheatsheet">
+      <div><strong>👤 ผู้ใช้ทั่วไป (Active):</strong> User <code>somchai_demo</code> | PIN <code>123456</code> (มี Face ID จำลอง)</div>
+      <div><strong>🩺 พยาบาล (Active):</strong> User <code>malee_anc</code> | PIN <code>246810</code> (ยังไม่ลงทะเบียน Face)</div>
+      <div><strong>🛡️ แอดมิน (Admin):</strong> Admin PIN <code>888888</code> (บัญชี <code>admin_demo</code>)</div>
+      <div><strong>⏳ รออนุมัติ (Pending):</strong> User <code>niran_new</code> | PIN <code>112233</code> (ทดสอบกดอนุมัติในหน้าแอดมิน)</div>
+    </div>
+  </div>
+
+  <!-- Main 21PASS Application -->
+  <div class="container view-pc" id="main-container">
+    <header>
+      <div class="brand-area">
+        <div class="hexagon-logo" id="logo-box">
+          <span class="hexagon-fallback">21</span>
+        </div>
+        <div>
+          <div class="logo-title">21PASS <span>SSO</span></div>
+          <div class="logo-subtitle">ระบบยืนยันตัวตนรวมศูนย์ (Mock-up Environment)</div>
+        </div>
+      </div>
+      <div class="header-controls">
+        <button class="header-btn" type="button" onclick="refreshAllData()" title="รีเฟรชข้อมูล">🔄</button>
+        <button class="header-btn" type="button" onclick="toggleViewMode()" id="view-toggle-btn" title="สลับโหมด Mobile / PC">💻 PC View</button>
+      </div>
+    </header>
+
+    <div class="sso-context-banner" id="sso-context-banner">
+      <span>🔑 กำลังล็อกอินเพื่อเชื่อมต่อไปยังแอป: <strong id="sso-target-app-name">-</strong> (<code id="sso-target-cid">-</code>)</span>
+      <button class="btn btn-secondary" type="button" style="padding:4px 8px; font-size:11px;" onclick="clearSsoContext()">ยกเลิกบริบทแอป</button>
+    </div>
+
+    <div class="view-nav">
+      <button class="nav-tab-btn active" type="button" id="nav-btn-login" onclick="switchView('login')">🔑 ล็อกอิน</button>
+      <button class="nav-tab-btn" type="button" id="nav-btn-register" onclick="switchView('register')">📝 สมัครสมาชิก</button>
+      <button class="nav-tab-btn" type="button" id="nav-btn-profile" onclick="switchView('profile')">👤 แก้ไขโปรไฟล์</button>
+      <button class="nav-tab-btn" type="button" id="nav-btn-admin" onclick="switchView('admin')">🛡️ แอดมิน</button>
+    </div>
+
+    <!-- VIEW 1: LOGIN -->
+    <div class="spa-view active" id="view-login">
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-orange-outline" type="button" style="flex:1;" onclick="openManualLogin()">
+          ⌨️ พิมพ์ล็อกอิน (Username / Email / เบอร์โทร)
+        </button>
+      </div>
+
+      <div class="filters-grid">
+        <div class="form-group">
+          <label for="filter-dept">แผนก (Department)</label>
+          <select class="filter-select" id="filter-dept" onchange="filterUsers()">
+            <option value="">ทั้งหมด</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filter-pos">ตำแหน่ง (Position)</label>
+          <select class="filter-select" id="filter-pos" onchange="filterUsers()">
+            <option value="">ทั้งหมด</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filter-floor">ชั้นทำงาน (Floor)</label>
+          <select class="filter-select" id="filter-floor" onchange="filterUsers()">
+            <option value="">ทั้งหมด</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="font-size:13px; font-weight:600; color:var(--text-secondary);">เลือกการ์ดผู้ใช้งานเพื่อป้อน PIN หรือสแกนใบหน้า:</div>
+      <div class="users-grid" id="users-container"></div>
+    </div>
+
+    <!-- VIEW 2: REGISTER -->
+    <div class="spa-view" id="view-register">
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label>รูปภาพโปรไฟล์ผู้ใช้ (จำลองการบีบอัด JPEG สูงสุด 300px)</label>
+          <div style="display:flex; align-items:center; gap:12px; background:#fbf9f4; padding:10px; border-radius:12px; border:1px dashed var(--border-color);">
+            <div style="width:60px; height:60px; border-radius:50%; border:2px solid var(--border-color); overflow:hidden; background:white; display:flex; justify-content:center; align-items:center; flex-shrink:0;" id="reg-preview-box">
+              <span style="font-size:20px; font-weight:700; color:var(--accent-green);">?</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <input type="file" id="reg-photo-file" accept="image/*" style="font-size:11px;" onchange="previewRegImage(this)">
+              <div style="font-size:10px; color:var(--text-secondary);" id="reg-img-hint">Demo จะประมวลผลย่อรูปบนเบราว์เซอร์ (ไม่ส่งออกเครือข่าย)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="required" for="reg-username">Username (อังกฤษ 3-16 ตัว)</label>
+          <input type="text" class="input-field" id="reg-username" placeholder="เช่น somchai21">
+        </div>
+        <div class="form-group">
+          <label class="required" for="reg-pin">รหัส PIN 6 หลัก</label>
+          <input type="password" class="input-field" id="reg-pin" maxlength="6" inputmode="numeric" placeholder="เช่น 123456">
+        </div>
+
+        <div class="form-group">
+          <label class="required" for="reg-prefix">คำนำหน้าชื่อ</label>
+          <select class="select-field" id="reg-prefix">
+            <option value="นาย">นาย</option>
+            <option value="นาง">นาง</option>
+            <option value="นางสาว">นางสาว</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reg-nickname">ชื่อเล่น (ถ้ามี)</label>
+          <input type="text" class="input-field" id="reg-nickname" placeholder="เช่น ต้น">
+        </div>
+
+        <div class="form-group full-width">
+          <label class="required" for="reg-displayName">ชื่อ - นามสกุลจริง</label>
+          <input type="text" class="input-field" id="reg-displayName" placeholder="เช่น สมชาย ใจดี">
+        </div>
+        <div class="form-group full-width">
+          <label class="required" for="reg-email">อีเมล (Email)</label>
+          <input type="email" class="input-field" id="reg-email" placeholder="เช่น somchai@demo.local">
+        </div>
+
+        <div class="form-group">
+          <label class="required" for="reg-phone">เบอร์โทรศัพท์ (มือถือหลัก)</label>
+          <input type="tel" class="input-field" id="reg-phone" placeholder="เช่น 0800000099">
+        </div>
+        <div class="form-group">
+          <label for="reg-deptPhone">เบอร์โทรแผนก (ถ้ามี)</label>
+          <input type="tel" class="input-field" id="reg-deptPhone" placeholder="เช่น 020001122">
+        </div>
+
+        <div class="form-group">
+          <label for="reg-lineId">Line ID (ถ้ามี)</label>
+          <input type="text" class="input-field" id="reg-lineId" placeholder="Line ID จำลอง">
+        </div>
+        <div class="form-group">
+          <label class="required" for="reg-department">แผนก / ฝ่าย</label>
+          <select class="select-field" id="reg-department"></select>
+        </div>
+
+        <div class="form-group">
+          <label class="required" for="reg-position">ตำแหน่ง</label>
+          <select class="select-field" id="reg-position"></select>
+        </div>
+        <div class="form-group">
+          <label class="required" for="reg-floor">ชั้นทำงาน / อาคาร</label>
+          <select class="select-field" id="reg-floor"></select>
+        </div>
+      </div>
+
+      <div class="status-msg" id="reg-status-box"></div>
+      <button class="btn btn-green" type="button" onclick="submitRegister()" style="padding:12px;">ลงทะเบียนสมัครสมาชิก (สถานะเริ่มต้น: Pending)</button>
+    </div>
+
+    <!-- VIEW 3: PROFILE EDIT -->
+    <div class="spa-view" id="view-profile">
+      <div id="profile-auth-box" style="display:flex; flex-direction:column; gap:12px; background:#fbf9f4; padding:20px; border-radius:16px; border:1px solid var(--border-color);">
+        <div style="font-size:14px; font-weight:700; text-align:center;">👤 ยืนยันตัวตนเพื่อแก้ไขข้อมูลโปรไฟล์</div>
+        <div style="font-size:11px; color:var(--text-secondary); text-align:center;">ตัวอย่างจำลอง: <code>somchai_demo</code> / PIN <code>123456</code></div>
+        <div class="form-group">
+          <label class="required">Username / Email / เบอร์โทร</label>
+          <input type="text" class="input-field" id="edit-auth-username" placeholder="เช่น somchai_demo">
+        </div>
+        <div class="form-group">
+          <label class="required">รหัส PIN ปัจจุบัน 6 หลัก</label>
+          <input type="password" class="input-field" id="edit-auth-pin" maxlength="6" inputmode="numeric" placeholder="••••••">
+        </div>
+        <div class="status-msg" id="profile-auth-status"></div>
+        <button class="btn btn-green" type="button" onclick="verifyProfileUser()" style="padding:10px;">ตรวจสอบตัวตน</button>
+      </div>
+
+      <div id="profile-edit-box" style="display:none; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+          <div style="font-size:14px; font-weight:700; color:var(--accent-green);">✏️ แก้ไขข้อมูลโปรไฟล์ส่วนตัว</div>
+          <button class="btn btn-secondary" type="button" style="padding:4px 8px; font-size:11px;" onclick="cancelProfileEdit()">ยกเลิก / ปิด</button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>รูปภาพโปรไฟล์</label>
+            <div style="display:flex; align-items:center; gap:12px; background:#fbf9f4; padding:10px; border-radius:12px; border:1px dashed var(--border-color);">
+              <div style="width:60px; height:60px; border-radius:50%; border:2px solid var(--border-color); overflow:hidden; background:white; display:flex; justify-content:center; align-items:center; flex-shrink:0;" id="edit-preview-box"></div>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <input type="file" id="edit-photo-file" accept="image/*" style="font-size:11px;" onchange="previewEditImage(this)">
+                <div style="font-size:10px; color:var(--text-secondary);" id="edit-img-hint">เลือกรูปใหม่ถ้าต้องการเปลี่ยนภาพโปรไฟล์</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="required">คำนำหน้าชื่อ</label>
+            <select class="select-field" id="edit-prefix">
+              <option value="นาย">นาย</option>
+              <option value="นาง">นาง</option>
+              <option value="นางสาว">นางสาว</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ชื่อเล่น</label>
+            <input type="text" class="input-field" id="edit-nickname">
+          </div>
+          <div class="form-group full-width">
+            <label class="required">ชื่อ - นามสกุลจริง</label>
+            <input type="text" class="input-field" id="edit-displayName">
+          </div>
+          <div class="form-group full-width">
+            <label class="required">อีเมล</label>
+            <input type="email" class="input-field" id="edit-email">
+          </div>
+          <div class="form-group">
+            <label class="required">เบอร์โทรศัพท์ (มือถือหลัก)</label>
+            <input type="tel" class="input-field" id="edit-phone">
+          </div>
+          <div class="form-group">
+            <label>เบอร์โทรแผนก</label>
+            <input type="tel" class="input-field" id="edit-deptPhone">
+          </div>
+          <div class="form-group">
+            <label>Line ID</label>
+            <input type="text" class="input-field" id="edit-lineId">
+          </div>
+          <div class="form-group">
+            <label class="required">แผนก / ฝ่าย</label>
+            <select class="select-field" id="edit-department"></select>
+          </div>
+          <div class="form-group">
+            <label class="required">ตำแหน่ง</label>
+            <select class="select-field" id="edit-position"></select>
+          </div>
+          <div class="form-group">
+            <label class="required">ชั้นทำงาน / อาคาร</label>
+            <select class="select-field" id="edit-floor"></select>
+          </div>
+        </div>
+
+        <div style="background:#fff7ed; border:1px solid #ffedd5; padding:12px; border-radius:12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:12px; font-weight:700; color:var(--accent-orange);">🔒 เปลี่ยนรหัส PIN 6 หลักใหม่ (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div class="form-group">
+              <label>รหัส PIN ใหม่</label>
+              <input type="password" class="input-field" id="edit-new-pin" maxlength="6" inputmode="numeric" placeholder="••••••">
+            </div>
+            <div class="form-group">
+              <label>ยืนยัน PIN ใหม่</label>
+              <input type="password" class="input-field" id="edit-confirm-pin" maxlength="6" inputmode="numeric" placeholder="••••••">
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:12px; font-weight:700; color:var(--accent-green);">📷 ข้อมูลสแกนใบหน้า (Face ID)</div>
+            <span id="profile-face-status-badge" class="badge badge-pending">ยังไม่ลงทะเบียน</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-green" style="flex:1; font-size:11px;" onclick="openProfileFaceEnroll()">🎥 ลงทะเบียนใบหน้าใหม่ (Demo)</button>
+            <button type="button" class="btn btn-danger" id="profile-delete-face-btn" style="font-size:11px; display:none;" onclick="deleteMyFace()">🗑️ ลบข้อมูล</button>
+          </div>
+        </div>
+
+        <div class="status-msg" id="profile-edit-status"></div>
+        <button class="btn btn-green" type="button" onclick="submitProfileEdit()" style="padding:12px;">บันทึกการแก้ไขข้อมูลโปรไฟล์</button>
+      </div>
+    </div>
+
+    <!-- VIEW 4: ADMIN -->
+    <div class="spa-view" id="view-admin">
+      <div id="admin-auth-barrier" style="display:flex; flex-direction:column; align-items:center; gap:12px; background:#fbf9f4; padding:24px; border-radius:16px; border:1px solid var(--border-color); text-align:center;">
+        <div style="font-size:32px;">🛡️</div>
+        <div style="font-size:16px; font-weight:700;">21PASS Admin Authentication (Demo)</div>
+        <div style="font-size:12px; color:var(--text-secondary);">กรอก Admin PIN จำลอง (<code>888888</code>) เพื่อเข้าสู่แผงควบคุม</div>
+        <input type="password" class="input-field" id="admin-pin-input" maxlength="6" placeholder="••••••" style="text-align:center; max-width:200px; font-size:18px; letter-spacing:0.15em;">
+        <div id="admin-auth-error" style="color:#dc2626; font-size:12px; display:none;"></div>
+        <button class="btn btn-green" type="button" onclick="verifyAdmin()" style="width:100%; max-width:200px;">ยืนยันสิทธิ์</button>
+      </div>
+
+      <div id="admin-panel" style="display:none; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:14px; font-weight:700;">แผงควบคุมหลังบ้าน Admin Console</div>
+          <button class="btn btn-secondary" type="button" style="padding:4px 10px; font-size:11px;" onclick="logoutAdmin()">ล็อกเอาท์</button>
+        </div>
+
+        <div class="admin-subtabs">
+          <button class="admin-tab-btn active" type="button" onclick="switchAdminTab('adm-users', this)">จัดการผู้ใช้งาน</button>
+          <button class="admin-tab-btn" type="button" onclick="switchAdminTab('adm-config', this)">จัดการตัวเลือก & โลโก้</button>
+          <button class="admin-tab-btn" type="button" onclick="switchAdminTab('adm-apps', this)">จัดการแอปเชื่อมต่อ (SSO)</button>
+        </div>
+
+        <div class="admin-subcontent active" id="adm-users">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ผู้ใช้งาน</th>
+                  <th>Username / โทร</th>
+                  <th>Line ID / เบอร์แผนก</th>
+                  <th>ตำแหน่ง / แผนก / ชั้น</th>
+                  <th>สถานะ & Face ID</th>
+                  <th>สิทธิ์แอป</th>
+                  <th style="text-align:center;">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="adm-users-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-subcontent" id="adm-config">
+          <div style="display:flex; align-items:center; gap:16px; background:#fbf9f4; padding:14px; border-radius:12px; border:1px solid var(--border-color);">
+            <div class="hexagon-logo" id="admin-logo-preview"><span class="hexagon-fallback">21</span></div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <input type="file" id="logo-file-input" accept="image/*" style="font-size:11px;" onchange="uploadLogoFile(this)">
+              <div style="font-size:10px; color:var(--text-secondary);">อัปโหลดภาพโลโก้เพื่อตัดเป็นทรง 6 เหลี่ยม</div>
+            </div>
+          </div>
+
+          <div class="config-grid">
+            <div class="config-card">
+              <h4 style="font-size:12px; font-weight:600;">แผนก (Department)</h4>
+              <div style="display:flex; gap:4px;">
+                <input type="text" class="input-field" id="new-dept" placeholder="เพิ่มแผนก...">
+                <button class="btn btn-green" type="button" onclick="addConfigItem('department', 'new-dept')">+</button>
+              </div>
+              <div class="config-list-container" id="dept-list-body"></div>
+            </div>
+            <div class="config-card">
+              <h4 style="font-size:12px; font-weight:600;">ตำแหน่ง (Position)</h4>
+              <div style="display:flex; gap:4px;">
+                <input type="text" class="input-field" id="new-pos" placeholder="เพิ่มตำแหน่ง...">
+                <button class="btn btn-green" type="button" onclick="addConfigItem('position', 'new-pos')">+</button>
+              </div>
+              <div class="config-list-container" id="pos-list-body"></div>
+            </div>
+            <div class="config-card">
+              <h4 style="font-size:12px; font-weight:600;">ชั้นทำงาน (Floor)</h4>
+              <div style="display:flex; gap:4px;">
+                <input type="text" class="input-field" id="new-floor" placeholder="เพิ่มชั้น...">
+                <button class="btn btn-green" type="button" onclick="addConfigItem('floor', 'new-floor')">+</button>
+              </div>
+              <div class="config-list-container" id="floor-list-body"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-subcontent" id="adm-apps">
+          <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:8px; background:#fbf9f4; padding:12px; border-radius:10px; border:1px solid var(--border-color); align-items:end;">
+            <div class="form-group">
+              <label>ชื่อแอป</label>
+              <input type="text" class="input-field" id="new-app-name" placeholder="เช่น ระบบงานส่งเสริมสุขภาพ">
+            </div>
+            <div class="form-group">
+              <label>Redirect URI (Mock)</label>
+              <input type="url" class="input-field" id="new-app-redirect" placeholder="https://demo-app.local/callback">
+            </div>
+            <button class="btn btn-green" type="button" onclick="addApp()">ลงทะเบียน</button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ชื่อแอป</th>
+                  <th>Client ID (Mock)</th>
+                  <th>Client Secret (Mock)</th>
+                  <th>Redirect URI (Mock)</th>
+                </tr>
+              </thead>
+              <tbody id="adm-apps-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: PIN & FACE -->
+  <div class="overlay" id="pin-overlay">
+    <div class="modal">
+      <button type="button" class="modal-close-btn" onclick="closeModals()">&times;</button>
+
+      <div id="pin-keypad-mode" style="display:flex; flex-direction:column; align-items:center; gap:8px; width:100%;">
+        <div class="modal-avatar" id="modal-user-avatar"></div>
+        <div class="modal-user-name" id="modal-user-name">-</div>
+        <div style="font-size:11px; color:var(--text-secondary); margin-top:-4px;" id="modal-user-sub">-</div>
+
+        <div class="pin-display">
+          <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+        </div>
+
+        <div style="display:flex; align-items:center; width:100%; max-width:190px; position:relative;">
+          <input type="password" id="modal-pin-input" maxlength="6" inputmode="numeric" placeholder="พิมพ์ PIN 6 หลัก" class="input-field" style="text-align:center; font-size:14px; letter-spacing:0.2em; padding:7px 28px 7px 10px;" oninput="onPinInputChange(this)">
+          <button type="button" id="toggle-pin-visibility-btn" onclick="togglePinVisibility()" style="position:absolute; right:6px; background:none; border:none; cursor:pointer; font-size:14px;">👁️</button>
+        </div>
+
+        <button type="button" class="btn btn-green" id="btn-modal-face-scan" onclick="handleFaceScanButtonClick()" style="width:100%; max-width:216px; font-size:12px;">
+          <span>📷</span> สแกนใบหน้าเข้าสู่ระบบ
+        </button>
+
+        <div class="status-msg" id="pin-status"></div>
+
+        <div class="numpad">
+          <button class="num-btn" type="button" onclick="pressKey('1')">1</button>
+          <button class="num-btn" type="button" onclick="pressKey('2')">2</button>
+          <button class="num-btn" type="button" onclick="pressKey('3')">3</button>
+          <button class="num-btn" type="button" onclick="pressKey('4')">4</button>
+          <button class="num-btn" type="button" onclick="pressKey('5')">5</button>
+          <button class="num-btn" type="button" onclick="pressKey('6')">6</button>
+          <button class="num-btn" type="button" onclick="pressKey('7')">7</button>
+          <button class="num-btn" type="button" onclick="pressKey('8')">8</button>
+          <button class="num-btn" type="button" onclick="pressKey('9')">9</button>
+          <button class="num-btn num-btn-utility" type="button" onclick="clearPIN()">ล้าง</button>
+          <button class="num-btn" type="button" onclick="pressKey('0')">0</button>
+          <button class="num-btn num-btn-utility" type="button" onclick="backspacePIN()">ลบ</button>
+        </div>
+      </div>
+
+      <div id="modal-face-view" style="display:none; flex-direction:column; align-items:center; gap:10px; width:100%;">
+        <div style="font-size:14px; font-weight:700;" id="face-mode-title">📷 สแกนใบหน้ายืนยันตัวตน</div>
+        <div style="font-size:11px; color:var(--text-secondary);" id="face-user-sub">-</div>
+
+        <div class="camera-viewport">
+          <video id="face-scan-video" class="camera-video" autoplay muted playsinline></video>
+          <div class="face-guide-oval"></div>
+          <div class="face-radar-line"></div>
+        </div>
+
+        <div class="face-instruction-badge" id="face-instruction-badge">📷 โหมดสาธิต: กดปุ่มจำลองผลลัพธ์ด้านล่าง</div>
+
+        <button type="button" class="btn btn-green" onclick="simulateFaceSuccess()" style="width:100%; max-width:230px; font-size:12px;">
+          ✨ จำลองสแกนใบหน้า + กระพริบตาผ่าน (Demo)
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="switchToKeypadMode()" style="width:100%; max-width:230px; font-size:12px;">
+          ⬅️ สลับไปใช้รหัส PIN
+        </button>
+      </div>
+
+      <div id="modal-enroll-prompt" style="display:none; flex-direction:column; align-items:center; gap:10px; width:100%; text-align:center;">
+        <div style="font-size:32px;">📷✨</div>
+        <div style="font-size:14px; font-weight:700;">ยังไม่มีข้อมูลสแกนใบหน้า</div>
+        <div style="font-size:11px; color:var(--text-secondary);">ป้อนรหัส PIN 6 หลักของบัญชีนี้เพื่อลงทะเบียนใบหน้า</div>
+        <input type="password" id="enroll-confirm-pin" maxlength="6" inputmode="numeric" placeholder="••••••" class="input-field" style="text-align:center; font-size:16px; letter-spacing:0.25em; max-width:180px;">
+        <div class="status-msg" id="enroll-prompt-status"></div>
+        <div style="display:flex; gap:8px; width:100%; max-width:240px;">
+          <button type="button" class="btn btn-secondary" style="flex:1; font-size:12px;" onclick="switchToKeypadMode()">ยกเลิก</button>
+          <button type="button" class="btn btn-green" style="flex:1; font-size:12px;" onclick="confirmPinAndStartEnroll()">เปิดกล้อง (Demo)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: MANUAL LOGIN -->
+  <div class="overlay" id="manual-overlay">
+    <div class="modal">
+      <button type="button" class="modal-close-btn" onclick="closeModals()">&times;</button>
+      <div class="logo-title" style="font-size:18px;">21PASS Manual Log In</div>
+      <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
+        <div class="form-group">
+          <label>Username / Email / เบอร์โทรศัพท์</label>
+          <input type="text" class="input-field" id="manual-username" placeholder="เช่น somchai_demo">
+        </div>
+        <div class="form-group">
+          <label>รหัส PIN 6 หลัก</label>
+          <input type="password" class="input-field" id="manual-pin" maxlength="6" inputmode="numeric" placeholder="••••••">
+        </div>
+        <div class="status-msg" id="manual-status"></div>
+        <button class="btn btn-green" type="button" onclick="submitManualLogin()">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: PERMISSIONS -->
+  <div class="overlay" id="app-permission-overlay">
+    <div class="modal" style="max-width:400px; align-items:stretch;">
+      <button type="button" class="modal-close-btn" onclick="closePermModal()">&times;</button>
+      <div style="font-size:14px; font-weight:700;" id="perm-user-title">จัดการสิทธิ์เข้าใช้แอป</div>
+      <div style="display:flex; align-items:center; gap:8px; background:#fbf9f4; padding:8px; border-radius:8px; margin-top:6px;">
+        <input type="checkbox" id="perm-check-all" onchange="toggleAllAppChecks(this)">
+        <label for="perm-check-all" style="font-size:12px; cursor:pointer; text-transform:none;">เข้าใช้งานได้ทุกแอปพลิเคชัน (All Apps)</label>
+      </div>
+      <div id="perm-apps-list" style="display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto; padding:4px;"></div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn btn-secondary" type="button" style="flex:1;" onclick="closePermModal()">ยกเลิก</button>
+        <button class="btn btn-green" type="button" style="flex:1;" onclick="saveUserAppPermissions()">บันทึกสิทธิ์</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: SSO CLIENT APP FLOW SIMULATOR -->
+  <div class="overlay" id="sso-sim-overlay">
+    <div class="modal" style="max-width:520px; align-items:stretch; gap:12px;">
+      <button type="button" class="modal-close-btn" onclick="closeSsoSimulator()">&times;</button>
+      <div style="font-size:16px; font-weight:700;">🔗 จำลองการเชื่อมต่อจากแอปปลายทาง (SSO Client Simulator)</div>
+      <div style="font-size:12px; color:var(--text-secondary);">
+        เลือกแอปปลายทางในเครือข่าย Pro-Health Data BKK South เพื่อจำลองขั้นตอน Authorization Code Flow (Redirect -> Login -> Exchange Code)
+      </div>
+      <div class="form-group">
+        <label>เลือกแอปปลายทางที่ลงทะเบียนไว้ (Mock Apps)</label>
+        <select class="select-field" id="sim-app-select"></select>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-green" type="button" style="flex:1;" onclick="startSsoFromSim()">1. เปิดหน้าล็อกอินพร้อมบริบทแอปนี้</button>
+      </div>
+      <div id="sim-result-area" style="display:none; flex-direction:column; gap:8px; border-top:1px dashed var(--border-color); padding-top:10px;">
+        <div style="font-size:12px; font-weight:700; color:var(--accent-green);">✅ จำลอง Redirect กลับมาพร้อม One-Time Code & Exchange JSON Payload:</div>
+        <div class="json-box" id="sim-json-output"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = '21pass_demo_mockup_db_v1';
+
+    function createInitialMockDb() {
+      return {
+        logoUrl: '',
+        configs: [
+          { type: 'department', value: 'อนามัยชุมชน' },
+          { type: 'department', value: 'คลินิก OPD' },
+          { type: 'department', value: 'งานส่งเสริมสุขภาพ (ANC)' },
+          { type: 'department', value: 'เภสัชกรรมและเวชภัณฑ์' },
+          { type: 'department', value: 'ไอทีและข้อมูลสุขภาพ' },
+          { type: 'position', value: 'ผู้อำนวยการศูนย์' },
+          { type: 'position', value: 'แพทย์' },
+          { type: 'position', value: 'พยาบาลวิชาชีพ' },
+          { type: 'position', value: 'นักวิชาการสาธารณสุข' },
+          { type: 'position', value: 'เภสัชกร' },
+          { type: 'position', value: 'นักวิชาการคอมพิวเตอร์' },
+          { type: 'floor', value: 'ชั้น 1 (OPD/คัดกรอง)' },
+          { type: 'floor', value: 'ชั้น 2 (คลินิกเฉพาะทาง)' },
+          { type: 'floor', value: 'ชั้น 3 (บริหาร/ไอที)' },
+          { type: 'floor', value: 'ลงพื้นที่ชุมชน' }
+        ],
+        apps: [
+          {
+            client_id: 'cid_demo_anc01',
+            client_name: 'ระบบดูแลการฝากครรภ์ (ANC)',
+            client_secret: 'sec_demo_anc_mock_001',
+            allowed_redirect_uris: 'https://demo-anc.local/callback'
+          },
+          {
+            client_id: 'cid_demo_scr02',
+            client_name: 'ระบบคัดกรองสุขภาพ (Health Screening)',
+            client_secret: 'sec_demo_scr_mock_002',
+            allowed_redirect_uris: 'https://demo-screening.local/callback'
+          },
+          {
+            client_id: 'cid_demo_med03',
+            client_name: 'ระบบคลังเวชภัณฑ์ (Medical Supplies)',
+            client_secret: 'sec_demo_med_mock_003',
+            allowed_redirect_uris: 'https://demo-supplies.local/callback'
+          },
+          {
+            client_id: 'cid_demo_map04',
+            client_name: 'ระบบแผนที่ชุมชนเขตวัฒนา',
+            client_secret: 'sec_demo_map_mock_004',
+            allowed_redirect_uris: 'https://demo-map.local/callback'
+          },
+          {
+            client_id: 'cid_demo_chat05',
+            client_name: 'ระบบสื่อสารองค์กร (Sevana Chat)',
+            client_secret: 'sec_demo_chat_mock_005',
+            allowed_redirect_uris: 'https://demo-chat.local/callback'
+          }
+        ],
+        users: [
+          {
+            uid: 'u_demo_admin',
+            username: 'admin_demo',
+            displayName: 'ผู้ดูแลระบบ สาธิต',
+            email: 'admin@demo.local',
+            photoURL: '',
+            position: 'นักวิชาการคอมพิวเตอร์',
+            department: 'ไอทีและข้อมูลสุขภาพ',
+            floor: 'ชั้น 3 (บริหาร/ไอที)',
+            role: 'admin',
+            status: 'active',
+            pin: '888888',
+            createdAt: '2026-10-01T08:30:00.000Z',
+            prefix: 'นาย',
+            phone: '0800000001',
+            deptPhone: '020000101',
+            lineId: 'demo_admin_line',
+            nickname: 'แอดมิน',
+            allowedApps: 'all',
+            hasFace: true
+          },
+          {
+            uid: 'u_demo_01',
+            username: 'somchai_demo',
+            displayName: 'สมชาย สุขภาพดี',
+            email: 'somchai@demo.local',
+            photoURL: '',
+            position: 'นักวิชาการสาธารณสุข',
+            department: 'อนามัยชุมชน',
+            floor: 'ลงพื้นที่ชุมชน',
+            role: 'user',
+            status: 'active',
+            pin: '123456',
+            createdAt: '2026-10-02T09:00:00.000Z',
+            prefix: 'นาย',
+            phone: '0800000002',
+            deptPhone: '020000102',
+            lineId: 'somchai_demo',
+            nickname: 'ชาย',
+            allowedApps: 'all',
+            hasFace: true
+          },
+          {
+            uid: 'u_demo_02',
+            username: 'malee_anc',
+            displayName: 'มาลี รักษ์ครรภ์',
+            email: 'malee@demo.local',
+            photoURL: '',
+            position: 'พยาบาลวิชาชีพ',
+            department: 'งานส่งเสริมสุขภาพ (ANC)',
+            floor: 'ชั้น 2 (คลินิกเฉพาะทาง)',
+            role: 'user',
+            status: 'active',
+            pin: '246810',
+            createdAt: '2026-10-03T10:15:00.000Z',
+            prefix: 'นางสาว',
+            phone: '0800000003',
+            deptPhone: '020000103',
+            lineId: 'malee_demo',
+            nickname: 'ลี',
+            allowedApps: 'cid_demo_anc01,cid_demo_scr02,cid_demo_chat05',
+            hasFace: false
+          },
+          {
+            uid: 'u_demo_03',
+            username: 'kanya_pharm',
+            displayName: 'กัญญา เภสัชกิจ',
+            email: 'kanya@demo.local',
+            photoURL: '',
+            position: 'เภสัชกร',
+            department: 'เภสัชกรรมและเวชภัณฑ์',
+            floor: 'ชั้น 1 (OPD/คัดกรอง)',
+            role: 'user',
+            status: 'active',
+            pin: '654321',
+            createdAt: '2026-10-04T11:20:00.000Z',
+            prefix: 'นาง',
+            phone: '0800000004',
+            deptPhone: '020000104',
+            lineId: 'kanya_demo',
+            nickname: 'กัญ',
+            allowedApps: 'cid_demo_med03,cid_demo_chat05',
+            hasFace: false
+          },
+          {
+            uid: 'u_demo_04',
+            username: 'niran_new',
+            displayName: 'นิรันดร์ ทดสอบใหม่',
+            email: 'niran@demo.local',
+            photoURL: '',
+            position: 'แพทย์',
+            department: 'คลินิก OPD',
+            floor: 'ชั้น 1 (OPD/คัดกรอง)',
+            role: 'user',
+            status: 'pending',
+            pin: '112233',
+            createdAt: '2026-10-10T14:00:00.000Z',
+            prefix: 'นาย',
+            phone: '0800000005',
+            deptPhone: '',
+            lineId: 'niran_demo',
+            nickname: 'รัน',
+            allowedApps: 'all',
+            hasFace: false
+          }
+        ]
+      };
+    }
+
+    let mockDb = loadMockDb();
+    let mockAuthCodeCache = {};
+    let activeSsoContext = null; // { client_id, client_name, redirect_uri }
+    let currentSelectedUser = null;
+    let pinCode = '';
+    let isMobileView = false;
+    let regBase64Photo = '';
+    let editBase64Photo = '';
+    let verifiedUserProfile = null;
+    let verifiedCurrentPin = '';
+    let adminPin = '';
+    let currentPermTargetUid = '';
+    let currentMediaStream = null;
+    let lastScanIsEnrollment = false;
+
+    function loadMockDb() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      const init = createInitialMockDb();
+      saveMockDb(init);
+      return init;
+    }
+
+    function saveMockDb(dbObj = mockDb) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dbObj));
+      } catch (e) {}
+    }
+
+    function resetDemoData() {
+      mockDb = createInitialMockDb();
+      saveMockDb(mockDb);
+      adminPin = '';
+      logoutAdmin();
+      clearSsoContext();
+      refreshAllData();
+      alert('รีเซ็ตข้อมูลจำลองกลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว');
+    }
+
+    function toggleCheatsheet() {
+      const el = document.getElementById('demo-cheatsheet');
+      el.style.display = el.style.display === 'none' ? 'grid' : 'none';
+    }
+
+    window.onload = function() {
+      refreshAllData();
+    };
+
+    function refreshAllData() {
+      loadFiltersAndLogo();
+      renderUsers(getActiveUsers());
+      if (adminPin) renderAdminData();
+    }
+
+    function switchView(viewName) {
+      document.querySelectorAll('.spa-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('view-' + viewName).classList.add('active');
+      document.getElementById('nav-btn-' + viewName).classList.add('active');
+    }
+
+    function toggleViewMode() {
+      const container = document.getElementById('main-container');
+      const toggleBtn = document.getElementById('view-toggle-btn');
+      isMobileView = !isMobileView;
+      if (isMobileView) {
+        container.className = 'container view-mobile';
+        toggleBtn.innerHTML = '📱 Mobile';
+      } else {
+        container.className = 'container view-pc';
+        toggleBtn.innerHTML = '💻 PC View';
+      }
+    }
+
+    function getActiveUsers() {
+      return mockDb.users.filter(u => u.status === 'active').map(u => ({
+        ...u,
+        cardLabel: u.nickname ? `${u.displayName} (${u.nickname})` : u.displayName
+      }));
+    }
+
+    function loadFiltersAndLogo() {
+      const depts = mockDb.configs.filter(c => c.type === 'department').map(c => c.value).sort();
+      const poss = mockDb.configs.filter(c => c.type === 'position').map(c => c.value).sort();
+      const floors = mockDb.configs.filter(c => c.type === 'floor').map(c => c.value).sort();
+
+      populateSelect('filter-dept', depts, 'ทั้งหมด');
+      populateSelect('filter-pos', poss, 'ทั้งหมด');
+      populateSelect('filter-floor', floors, 'ทั้งหมด');
+
+      populateSelect('reg-department', depts, 'เลือกแผนก...');
+      populateSelect('reg-position', poss, 'เลือกตำแหน่ง...');
+      populateSelect('reg-floor', floors, 'เลือกชั้น...');
+
+      populateSelect('edit-department', depts, 'เลือกแผนก...');
+      populateSelect('edit-position', poss, 'เลือกตำแหน่ง...');
+      populateSelect('edit-floor', floors, 'เลือกชั้น...');
+
+      const logoHtml = mockDb.logoUrl ? `<img src="${mockDb.logoUrl}" alt="Logo">` : '<span class="hexagon-fallback">21</span>';
+      document.getElementById('logo-box').innerHTML = logoHtml;
+      document.getElementById('admin-logo-preview').innerHTML = logoHtml;
+    }
+
+    function populateSelect(id, items, defaultText) {
+      const select = document.getElementById(id);
+      if (!select) return;
+      select.innerHTML = `<option value="">${defaultText}</option>`;
+      items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item;
+        opt.textContent = item;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderUsers(users) {
+      const container = document.getElementById('users-container');
+      container.innerHTML = '';
+      if (!users.length) {
+        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:30px;">ไม่พบบัญชีผู้ใช้งานที่ตรงตามตัวกรอง</div>';
+        return;
+      }
+      users.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'user-card';
+        card.onclick = () => openPinModal(user);
+        const avatarHtml = user.photoURL
+          ? `<img src="${user.photoURL}" class="avatar-img" alt="${user.displayName}">`
+          : `<span class="avatar-placeholder">${user.displayName.charAt(0)}</span>`;
+        const faceBadge = user.hasFace ? '<span class="face-badge-card" title="ลงทะเบียนใบหน้าแล้ว">📷</span>' : '';
+        card.innerHTML = `
+          ${faceBadge}
+          <div class="avatar-container">${avatarHtml}</div>
+          <div class="user-name">${user.cardLabel}</div>
+          <div class="user-meta">${user.position}</div>
+          <div class="user-meta" style="opacity:0.75;">${user.department} • ${user.floor}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterUsers() {
+      const dept = document.getElementById('filter-dept').value;
+      const pos = document.getElementById('filter-pos').value;
+      const floor = document.getElementById('filter-floor').value;
+      const filtered = getActiveUsers().filter(u =>
+        (!dept || u.department === dept) &&
+        (!pos || u.position === pos) &&
+        (!floor || u.floor === floor)
+      );
+      renderUsers(filtered);
+    }
+
+    function mockVerifyLogin({ username, pin, useFace }) {
+      const cleanInput = (username || '').trim().toLowerCase();
+      const user = mockDb.users.find(u =>
+        u.status === 'active' &&
+        (u.username.toLowerCase() === cleanInput || u.email.toLowerCase() === cleanInput || u.phone === cleanInput)
+      );
+      if (!user) return { success: false, message: 'ไม่พบบัญชีผู้ใช้ หรือบัญชีนี้ยังไม่ได้รับการอนุมัติ' };
+      if (!useFace && user.pin !== (pin || '').trim()) {
+        return { success: false, message: 'รหัส PIN 6 หลักไม่ถูกต้อง' };
+      }
+      if (useFace && !user.hasFace) {
+        return { success: false, message: 'ผู้ใช้งานนี้ยังไม่ได้ลงทะเบียนใบหน้า' };
+      }
+
+      if (activeSsoContext) {
+        const app = mockDb.apps.find(a => a.client_id === activeSsoContext.client_id);
+        if (!app) return { success: false, message: 'ไม่พบแอปพลิเคชันในระบบ 21PASS' };
+        if (user.allowedApps !== 'all' && user.allowedApps !== '') {
+          const list = user.allowedApps.split(',').map(x => x.trim());
+          if (!list.includes(activeSsoContext.client_id)) {
+            return { success: false, message: 'บัญชีของคุณไม่ได้รับสิทธิ์เข้าใช้งานแอปพลิเคชันนี้' };
+          }
+        }
+      }
+
+      const { pin: _omit, ...safeUser } = user;
+      const code = 'code_mock_' + Math.random().toString(36).substring(2, 12);
+      mockAuthCodeCache[code] = safeUser;
+      const redirectUrl = activeSsoContext
+        ? `${activeSsoContext.redirect_uri}?code=${code}`
+        : '';
+
+      return { success: true, message: 'เข้าสู่ระบบสำเร็จ', user: safeUser, code, redirectUrl };
+    }
+
+    function openPinModal(user) {
+      currentSelectedUser = user;
+      pinCode = '';
+      switchToKeypadMode();
+      const btnFace = document.getElementById('btn-modal-face-scan');
+      btnFace.innerHTML = user.hasFace ? '<span>📷</span> สแกนใบหน้าเข้าสู่ระบบ' : '<span>📷</span> ลงทะเบียนสแกนใบหน้า';
+      btnFace.className = user.hasFace ? 'btn btn-green' : 'btn btn-secondary';
+
+      document.getElementById('modal-pin-input').value = '';
+      document.getElementById('modal-pin-input').type = 'password';
+      document.getElementById('toggle-pin-visibility-btn').textContent = '👁️';
+      document.getElementById('pin-status').style.display = 'none';
+      document.getElementById('modal-user-name').textContent = user.cardLabel || user.displayName;
+      document.getElementById('modal-user-sub').textContent = `${user.position} (${user.department})`;
+      document.getElementById('modal-user-avatar').innerHTML = user.photoURL
+        ? `<img src="${user.photoURL}" class="avatar-img">`
+        : `<span class="avatar-placeholder" style="font-size:18px;">${user.displayName.charAt(0)}</span>`;
+      updatePinDots();
+      document.getElementById('pin-overlay').classList.add('active');
+    }
+
+    function openManualLogin() {
+      closeModals();
+      document.getElementById('manual-username').value = '';
+      document.getElementById('manual-pin').value = '';
+      document.getElementById('manual-status').style.display = 'none';
+      document.getElementById('manual-overlay').classList.add('active');
+    }
+
+    function closeModals() {
+      stopCameraStream();
+      document.getElementById('pin-overlay').classList.remove('active');
+      document.getElementById('manual-overlay').classList.remove('active');
+      currentSelectedUser = null;
+      pinCode = '';
+    }
+
+    function onPinInputChange(el) {
+      el.value = el.value.replace(/[^0-9]/g, '').slice(0, 6);
+      pinCode = el.value;
+      updatePinDots();
+      if (pinCode.length === 6) submitPinLogin();
+    }
+
+    function togglePinVisibility() {
+      const el = document.getElementById('modal-pin-input');
+      const btn = document.getElementById('toggle-pin-visibility-btn');
+      if (el.type === 'password') { el.type = 'text'; btn.textContent = '🙈'; }
+      else { el.type = 'password'; btn.textContent = '👁️'; }
+    }
+
+    function pressKey(num) {
+      if (pinCode.length < 6) {
+        pinCode += num;
+        document.getElementById('modal-pin-input').value = pinCode;
+        updatePinDots();
+        if (pinCode.length === 6) submitPinLogin();
+      }
+    }
+    function clearPIN() { pinCode = ''; document.getElementById('modal-pin-input').value = ''; updatePinDots(); }
+    function backspacePIN() { pinCode = pinCode.slice(0, -1); document.getElementById('modal-pin-input').value = pinCode; updatePinDots(); }
+    function updatePinDots() {
+      document.querySelectorAll('.pin-dot').forEach((dot, idx) => dot.classList.toggle('active', idx < pinCode.length));
+    }
+
+    function handleAuthResult(res, statusElId) {
+      const statusDiv = document.getElementById(statusElId);
+      if (res.success) {
+        if (activeSsoContext && res.code) {
+          closeModals();
+          showSsoExchangeResult(res.code, activeSsoContext);
+          return;
+        }
+        statusDiv.innerHTML = `✅ เข้าสู่ระบบสำเร็จ! สวัสดีคุณ <strong>${res.user.displayName}</strong> (${res.user.role})`;
+        statusDiv.className = 'status-msg success';
+        statusDiv.style.display = 'block';
+        setTimeout(() => closeModals(), 1400);
+      } else {
+        statusDiv.textContent = res.message;
+        statusDiv.className = 'status-msg error';
+        statusDiv.style.display = 'block';
+        clearPIN();
+      }
+    }
+
+    function submitPinLogin() {
+      const res = mockVerifyLogin({ username: currentSelectedUser.username, pin: pinCode });
+      handleAuthResult(res, 'pin-status');
+    }
+
+    function submitManualLogin() {
+      const username = document.getElementById('manual-username').value.trim();
+      const pin = document.getElementById('manual-pin').value.trim();
+      const statusDiv = document.getElementById('manual-status');
+      if (!username || !pin) {
+        statusDiv.textContent = 'กรุณากรอกข้อมูลให้ครบถ้วน';
+        statusDiv.className = 'status-msg error';
+        statusDiv.style.display = 'block';
+        return;
+      }
+      const res = mockVerifyLogin({ username, pin });
+      handleAuthResult(res, 'manual-status');
+    }
+
+    /* Face Demo Flow */
+    function stopCameraStream() {
+      if (currentMediaStream) {
+        currentMediaStream.getTracks().forEach(t => t.stop());
+        currentMediaStream = null;
+      }
+      const v = document.getElementById('face-scan-video');
+      if (v) v.srcObject = null;
+    }
+
+    function switchToKeypadMode() {
+      stopCameraStream();
+      document.getElementById('modal-face-view').style.display = 'none';
+      document.getElementById('modal-enroll-prompt').style.display = 'none';
+      document.getElementById('pin-keypad-mode').style.display = 'flex';
+    }
+
+    function handleFaceScanButtonClick() {
+      if (!currentSelectedUser) return;
+      if (currentSelectedUser.hasFace) startFaceAuth(false);
+      else {
+        document.getElementById('pin-keypad-mode').style.display = 'none';
+        document.getElementById('modal-enroll-prompt').style.display = 'flex';
+        document.getElementById('enroll-confirm-pin').value = '';
+        document.getElementById('enroll-prompt-status').style.display = 'none';
+      }
+    }
+
+    function confirmPinAndStartEnroll() {
+      const pinVal = document.getElementById('enroll-confirm-pin').value.trim();
+      const statusDiv = document.getElementById('enroll-prompt-status');
+      const targetUser = mockDb.users.find(u => u.username === currentSelectedUser.username);
+      if (!targetUser || targetUser.pin !== pinVal) {
+        statusDiv.textContent = 'รหัส PIN ไม่ถูกต้อง ไม่สามารถเปิดลงทะเบียนใบหน้าได้';
+        statusDiv.className = 'status-msg error';
+        statusDiv.style.display = 'block';
+        return;
+      }
+      startFaceAuth(true);
+    }
+
+    async function startFaceAuth(isEnrollment) {
+      lastScanIsEnrollment = isEnrollment;
+      document.getElementById('pin-keypad-mode').style.display = 'none';
+      document.getElementById('modal-enroll-prompt').style.display = 'none';
+      document.getElementById('modal-face-view').style.display = 'flex';
+      document.getElementById('face-mode-title').textContent = isEnrollment ? '🎥 บันทึกข้อมูลใบหน้า (Demo)' : '📷 สแกนใบหน้ายืนยันตัวตน (Demo)';
+      document.getElementById('face-user-sub').textContent = `ผู้ใช้: ${currentSelectedUser.displayName}`;
+
+      const badge = document.getElementById('face-instruction-badge');
+      badge.textContent = '📷 โหมดสาธิต: กดปุ่มจำลองผลลัพธ์ด้านล่าง (หรือเปิดกล้องจริงอัตโนมัติ)';
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          currentMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+          document.getElementById('face-scan-video').srcObject = currentMediaStream;
+        } catch (e) {
+          badge.textContent = 'ℹ️ ไม่พบกล้องหรือไม่ได้อนุญาต — กดปุ่มจำลองด้านล่างเพื่อทดสอบ Flow';
+        }
+      }
+    }
+
+    function simulateFaceSuccess() {
+      stopCameraStream();
+      if (lastScanIsEnrollment) {
+        const u = mockDb.users.find(x => x.username === currentSelectedUser.username);
+        if (u) u.hasFace = true;
+        saveMockDb();
+        currentSelectedUser.hasFace = true;
+        refreshAllData();
+        alert('✅ บันทึกเวกเตอร์ใบหน้าจำลอง (128-D) เรียบร้อยแล้ว!');
+        switchToKeypadMode();
+        const btnFace = document.getElementById('btn-modal-face-scan');
+        btnFace.innerHTML = '<span>📷</span> สแกนใบหน้าเข้าสู่ระบบ';
+        btnFace.className = 'btn btn-green';
+      } else {
+        const res = mockVerifyLogin({ username: currentSelectedUser.username, useFace: true });
+        switchToKeypadMode();
+        handleAuthResult(res, 'pin-status');
+      }
+    }
+
+    /* Image Processor */
+    function processImageFile(file, previewId, hintId, callback) {
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { alert('ขนาดไฟล์เกิน 10MB'); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const max = 300;
+          let w = img.width, h = img.height;
+          if (w > h && w > max) { h *= max / w; w = max; }
+          else if (h > max) { w *= max / h; h = max; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const jpg = canvas.toDataURL('image/jpeg', 0.85);
+          if (hintId) document.getElementById(hintId).textContent = '✅ บีบอัดภาพขนาด 300px สำเร็จ';
+          callback(jpg);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function previewRegImage(input) {
+      processImageFile(input.files[0], 'reg-preview-box', 'reg-img-hint', b64 => {
+        regBase64Photo = b64;
+        document.getElementById('reg-preview-box').innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:cover;">`;
+      });
+    }
+
+    function previewEditImage(input) {
+      processImageFile(input.files[0], 'edit-preview-box', 'edit-img-hint', b64 => {
+        editBase64Photo = b64;
+        document.getElementById('edit-preview-box').innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:cover;">`;
+      });
+    }
+
+    /* Register */
+    function submitRegister() {
+      const username = document.getElementById('reg-username').value.trim();
+      const pin = document.getElementById('reg-pin').value.trim();
+      const prefix = document.getElementById('reg-prefix').value;
+      const nickname = document.getElementById('reg-nickname').value.trim();
+      const displayName = document.getElementById('reg-displayName').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const deptPhone = document.getElementById('reg-deptPhone').value.trim();
+      const lineId = document.getElementById('reg-lineId').value.trim();
+      const department = document.getElementById('reg-department').value;
+      const position = document.getElementById('reg-position').value;
+      const floor = document.getElementById('reg-floor').value;
+      const statusBox = document.getElementById('reg-status-box');
+
+      if (!username || !pin || !displayName || !email || !phone || !department || !position || !floor) {
+        statusBox.textContent = 'กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบถ้วน';
+        statusBox.className = 'status-msg error';
+        return;
+      }
+      if (!/^[a-zA-Z][a-zA-Z0-9]{2,15}$/.test(username)) {
+        statusBox.textContent = 'Username ต้องขึ้นต้นด้วยภาษาอังกฤษ ความยาว 3-16 ตัวอักษร และไม่มีอักขระพิเศษ';
+        statusBox.className = 'status-msg error';
+        return;
+      }
+      if (!/^\d{6}$/.test(pin)) {
+        statusBox.textContent = 'รหัส PIN ต้องเป็นตัวเลข 6 หลัก';
+        statusBox.className = 'status-msg error';
+        return;
+      }
+      if (mockDb.users.some(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase() || u.phone === phone)) {
+        statusBox.textContent = 'Username, อีเมล หรือเบอร์โทรนี้ถูกใช้งานแล้ว';
+        statusBox.className = 'status-msg error';
+        return;
+      }
+
+      mockDb.users.push({
+        uid: 'u_demo_' + Math.random().toString(36).substring(2, 7),
+        username, displayName, email, photoURL: regBase64Photo,
+        position, department, floor, role: 'user', status: 'pending',
+        pin, createdAt: new Date().toISOString(), prefix, phone, deptPhone, lineId, nickname,
+        allowedApps: 'all', hasFace: false
+      });
+      saveMockDb();
+      regBase64Photo = '';
+      statusBox.textContent = '✅ สมัครสมาชิกสำเร็จ! สถานะคือ pending (เข้าแท็บ "แอดมิน" เพื่อกดอนุมัติ)';
+      statusBox.className = 'status-msg success';
+      refreshAllData();
+    }
+
+    /* Profile Edit */
+    function verifyProfileUser() {
+      const username = document.getElementById('edit-auth-username').value.trim();
+      const pin = document.getElementById('edit-auth-pin').value.trim();
+      const statusDiv = document.getElementById('profile-auth-status');
+      const res = mockVerifyLogin({ username, pin });
+      if (!res.success) {
+        statusDiv.textContent = res.message;
+        statusDiv.className = 'status-msg error';
+        return;
+      }
+      verifiedUserProfile = res.user;
+      verifiedCurrentPin = pin;
+      populateProfileEditForm(res.user);
+      document.getElementById('profile-auth-box').style.display = 'none';
+      document.getElementById('profile-edit-box').style.display = 'flex';
+    }
+
+    function populateProfileEditForm(user) {
+      editBase64Photo = '';
+      document.getElementById('edit-prefix').value = user.prefix || 'นาย';
+      document.getElementById('edit-nickname').value = user.nickname || '';
+      document.getElementById('edit-displayName').value = user.displayName || '';
+      document.getElementById('edit-email').value = user.email || '';
+      document.getElementById('edit-phone').value = user.phone || '';
+      document.getElementById('edit-deptPhone').value = user.deptPhone || '';
+      document.getElementById('edit-lineId').value = user.lineId || '';
+      document.getElementById('edit-department').value = user.department || '';
+      document.getElementById('edit-position').value = user.position || '';
+      document.getElementById('edit-floor').value = user.floor || '';
+      document.getElementById('edit-new-pin').value = '';
+      document.getElementById('edit-confirm-pin').value = '';
+      document.getElementById('edit-preview-box').innerHTML = user.photoURL
+        ? `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;">`
+        : `<span style="font-size:20px;font-weight:700;color:var(--accent-green);">${user.displayName.charAt(0)}</span>`;
+
+      const badge = document.getElementById('profile-face-status-badge');
+      const delBtn = document.getElementById('profile-delete-face-btn');
+      if (user.hasFace) {
+        badge.className = 'badge badge-active'; badge.textContent = 'ลงทะเบียนแล้ว';
+        delBtn.style.display = 'inline-block';
+      } else {
+        badge.className = 'badge badge-pending'; badge.textContent = 'ยังไม่ลงทะเบียน';
+        delBtn.style.display = 'none';
+      }
+    }
+
+    function openProfileFaceEnroll() {
+      if (!verifiedUserProfile) return;
+      currentSelectedUser = { ...verifiedUserProfile };
+      document.getElementById('pin-overlay').classList.add('active');
+      startFaceAuth(true);
+    }
+
+    function deleteMyFace() {
+      const u = mockDb.users.find(x => x.username === verifiedUserProfile.username);
+      if (u) u.hasFace = false;
+      verifiedUserProfile.hasFace = false;
+      saveMockDb();
+      populateProfileEditForm(verifiedUserProfile);
+      refreshAllData();
+    }
+
+    function submitProfileEdit() {
+      const newPin = document.getElementById('edit-new-pin').value.trim();
+      const confirmPin = document.getElementById('edit-confirm-pin').value.trim();
+      const statusBox = document.getElementById('profile-edit-status');
+      if (newPin || confirmPin) {
+        if (newPin !== confirmPin || !/^\d{6}$/.test(newPin)) {
+          statusBox.textContent = 'รหัส PIN ใหม่ต้องเป็นตัวเลข 6 หลักและตรงกัน';
+          statusBox.className = 'status-msg error';
+          return;
+        }
+      }
+      const u = mockDb.users.find(x => x.username === verifiedUserProfile.username);
+      if (!u) return;
+      u.prefix = document.getElementById('edit-prefix').value;
+      u.nickname = document.getElementById('edit-nickname').value.trim();
+      u.displayName = document.getElementById('edit-displayName').value.trim();
+      u.email = document.getElementById('edit-email').value.trim();
+      u.phone = document.getElementById('edit-phone').value.trim();
+      u.deptPhone = document.getElementById('edit-deptPhone').value.trim();
+      u.lineId = document.getElementById('edit-lineId').value.trim();
+      u.department = document.getElementById('edit-department').value;
+      u.position = document.getElementById('edit-position').value;
+      u.floor = document.getElementById('edit-floor').value;
+      if (editBase64Photo) u.photoURL = editBase64Photo;
+      if (newPin) { u.pin = newPin; verifiedCurrentPin = newPin; }
+      saveMockDb();
+      statusBox.textContent = '✅ อัปเดตข้อมูลโปรไฟล์เรียบร้อยแล้ว!';
+      statusBox.className = 'status-msg success';
+      refreshAllData();
+    }
+
+    function cancelProfileEdit() {
+      verifiedUserProfile = null;
+      verifiedCurrentPin = '';
+      document.getElementById('profile-auth-box').style.display = 'flex';
+      document.getElementById('profile-edit-box').style.display = 'none';
+      document.getElementById('profile-auth-status').style.display = 'none';
+      document.getElementById('profile-edit-status').style.display = 'none';
+    }
+
+    /* Admin */
+    function verifyAdmin() {
+      const pin = document.getElementById('admin-pin-input').value.trim();
+      const err = document.getElementById('admin-auth-error');
+      const isOk = mockDb.users.some(u => u.role === 'admin' && u.pin === pin) || pin === '888888';
+      if (!isOk) {
+        err.textContent = 'รหัสผู้ดูแลระบบไม่ถูกต้อง (รหัส Demo คือ 888888)';
+        err.style.display = 'block';
+        return;
+      }
+      err.style.display = 'none';
+      adminPin = pin;
+      document.getElementById('admin-auth-barrier').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'flex';
+      renderAdminData();
+    }
+
+    function logoutAdmin() {
+      adminPin = '';
+      document.getElementById('admin-pin-input').value = '';
+      document.getElementById('admin-auth-barrier').style.display = 'flex';
+      document.getElementById('admin-panel').style.display = 'none';
+    }
+
+    function switchAdminTab(tabId, btn) {
+      document.querySelectorAll('.admin-subcontent').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function renderAdminData() {
+      const userBody = document.getElementById('adm-users-table');
+      userBody.innerHTML = '';
+      mockDb.users.forEach(user => {
+        const badgeClass = user.status === 'active' ? 'badge-active' : (user.status === 'suspended' ? 'badge-suspended' : 'badge-pending');
+        const actionBtn = user.status === 'active'
+          ? `<button class="btn btn-danger" type="button" style="padding:3px 6px;font-size:10px;" onclick="updateUserStatus('${user.uid}','suspended')">บล็อก</button>`
+          : `<button class="btn btn-green" type="button" style="padding:3px 6px;font-size:10px;" onclick="updateUserStatus('${user.uid}','active')">อนุมัติ</button>`;
+        const appLabel = user.allowedApps === 'all' ? 'ทุกแอป' : `${user.allowedApps.split(',').length} แอป`;
+        const faceBadge = user.hasFace
+          ? `<div style="margin-top:4px;"><span class="badge badge-active" style="cursor:pointer;" onclick="adminResetUserFace('${user.uid}')">📷 ใบหน้า: มี ✖</span></div>`
+          : `<div style="margin-top:4px;"><span class="badge badge-pending" style="opacity:0.6;">📷 ยังไม่มี</span></div>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><div style="font-weight:600;">${user.prefix}${user.displayName}${user.nickname ? ` (${user.nickname})` : ''}</div><div style="font-size:10px;opacity:0.6;">${user.uid}</div></td>
+          <td><div>${user.username}</div><div style="font-size:10px;color:var(--accent-orange);">${user.phone}</div></td>
+          <td><div>${user.lineId || '-'}</div><div style="font-size:10px;opacity:0.7;">${user.deptPhone || '-'}</div></td>
+          <td><div>${user.position}</div><div style="font-size:10px;opacity:0.7;">${user.department} • ${user.floor}</div></td>
+          <td><span class="badge ${badgeClass}">${user.status}</span>${faceBadge}</td>
+          <td><button class="btn btn-secondary" type="button" style="padding:3px 6px;font-size:10px;" onclick="openPermModal('${user.uid}')">🔑 ${appLabel}</button></td>
+          <td style="text-align:center;">${actionBtn}</td>
+        `;
+        userBody.appendChild(tr);
+      });
+
+      const appBody = document.getElementById('adm-apps-table');
+      appBody.innerHTML = '';
+      mockDb.apps.forEach(app => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:600;">${app.client_name}</td>
+          <td><code>${app.client_id}</code></td>
+          <td><code>${app.client_secret}</code></td>
+          <td style="font-size:11px;"><code>${app.allowed_redirect_uris}</code></td>
+        `;
+        appBody.appendChild(tr);
+      });
+
+      const lists = { department: 'dept-list-body', position: 'pos-list-body', floor: 'floor-list-body' };
+      Object.values(lists).forEach(id => document.getElementById(id).innerHTML = '');
+      mockDb.configs.forEach(cfg => {
+        const target = document.getElementById(lists[cfg.type]);
+        if (!target) return;
+        const div = document.createElement('div');
+        div.className = 'config-item';
+        div.innerHTML = `<span>${cfg.value}</span><button style="background:none;border:none;color:#dc2626;cursor:pointer;font-weight:bold;" onclick="deleteConfigItem('${cfg.type}','${cfg.value}')">&times;</button>`;
+        target.appendChild(div);
+      });
+    }
+
+    function updateUserStatus(uid, status) {
+      const u = mockDb.users.find(x => x.uid === uid);
+      if (u) u.status = status;
+      saveMockDb();
+      refreshAllData();
+    }
+
+    function adminResetUserFace(uid) {
+      const u = mockDb.users.find(x => x.uid === uid);
+      if (u && confirm(`ล้างข้อมูลใบหน้าของ ${u.displayName} ใช่หรือไม่?`)) {
+        u.hasFace = false;
+        saveMockDb();
+        refreshAllData();
+      }
+    }
+
+    function openPermModal(uid) {
+      currentPermTargetUid = uid;
+      const user = mockDb.users.find(u => u.uid === uid);
+      document.getElementById('perm-user-title').textContent = `สิทธิ์เข้าใช้แอป: ${user.displayName}`;
+      const isAll = user.allowedApps === 'all' || !user.allowedApps;
+      document.getElementById('perm-check-all').checked = isAll;
+      const allowedList = isAll ? [] : user.allowedApps.split(',').map(s => s.trim());
+      const container = document.getElementById('perm-apps-list');
+      container.innerHTML = '';
+      mockDb.apps.forEach(app => {
+        const checked = isAll || allowedList.includes(app.client_id);
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px;font-size:12px;';
+        div.innerHTML = `<input type="checkbox" class="perm-app-checkbox" value="${app.client_id}" ${checked ? 'checked' : ''} ${isAll ? 'disabled' : ''}><span>${app.client_name}</span>`;
+        container.appendChild(div);
+      });
+      document.getElementById('app-permission-overlay').classList.add('active');
+    }
+
+    function toggleAllAppChecks(el) {
+      document.querySelectorAll('.perm-app-checkbox').forEach(cb => { cb.checked = el.checked; cb.disabled = el.checked; });
+    }
+
+    function closePermModal() {
+      document.getElementById('app-permission-overlay').classList.remove('active');
+    }
+
+    function saveUserAppPermissions() {
+      const isAll = document.getElementById('perm-check-all').checked;
+      let val = 'all';
+      if (!isAll) {
+        const selected = Array.from(document.querySelectorAll('.perm-app-checkbox:checked')).map(c => c.value);
+        if (!selected.length) { alert('กรุณาเลือกอย่างน้อย 1 แอป'); return; }
+        val = selected.join(',');
+      }
+      const u = mockDb.users.find(x => x.uid === currentPermTargetUid);
+      if (u) u.allowedApps = val;
+      saveMockDb();
+      closePermModal();
+      refreshAllData();
+    }
+
+    function addApp() {
+      const name = document.getElementById('new-app-name').value.trim();
+      const uri = document.getElementById('new-app-redirect').value.trim();
+      if (!name || !uri) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+      mockDb.apps.push({
+        client_id: 'cid_demo_' + Math.random().toString(36).substring(2, 7),
+        client_name: name,
+        client_secret: 'sec_demo_' + Math.random().toString(36).substring(2, 12),
+        allowed_redirect_uris: uri
+      });
+      saveMockDb();
+      document.getElementById('new-app-name').value = '';
+      document.getElementById('new-app-redirect').value = '';
+      renderAdminData();
+    }
+
+    function addConfigItem(type, inputId) {
+      const val = document.getElementById(inputId).value.trim();
+      if (!val) return;
+      if (!mockDb.configs.some(c => c.type === type && c.value === val)) {
+        mockDb.configs.push({ type, value: val });
+        saveMockDb();
+        document.getElementById(inputId).value = '';
+        refreshAllData();
+      }
+    }
+
+    function deleteConfigItem(type, val) {
+      mockDb.configs = mockDb.configs.filter(c => !(c.type === type && c.value === val));
+      saveMockDb();
+      refreshAllData();
+    }
+
+    function uploadLogoFile(input) {
+      processImageFile(input.files[0], null, null, b64 => {
+        mockDb.logoUrl = b64;
+        saveMockDb();
+        loadFiltersAndLogo();
+      });
+    }
+
+    /* SSO Simulator */
+    function openSsoSimulator() {
+      const sel = document.getElementById('sim-app-select');
+      sel.innerHTML = '';
+      mockDb.apps.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.client_id;
+        opt.textContent = `${a.client_name} (${a.client_id})`;
+        sel.appendChild(opt);
+      });
+      document.getElementById('sim-result-area').style.display = 'none';
+      document.getElementById('sso-sim-overlay').classList.add('active');
+    }
+
+    function closeSsoSimulator() {
+      document.getElementById('sso-sim-overlay').classList.remove('active');
+    }
+
+    function startSsoFromSim() {
+      const cid = document.getElementById('sim-app-select').value;
+      const app = mockDb.apps.find(a => a.client_id === cid);
+      if (!app) return;
+      activeSsoContext = {
+        client_id: app.client_id,
+        client_name: app.client_name,
+        redirect_uri: app.allowed_redirect_uris
+      };
+      document.getElementById('sso-target-app-name').textContent = app.client_name;
+      document.getElementById('sso-target-cid').textContent = app.client_id;
+      document.getElementById('sso-context-banner').classList.add('active');
+      closeSsoSimulator();
+      switchView('login');
+    }
+
+    function clearSsoContext() {
+      activeSsoContext = null;
+      document.getElementById('sso-context-banner').classList.remove('active');
+    }
+
+    function showSsoExchangeResult(code, ctx) {
+      const userPayload = mockAuthCodeCache[code];
+      delete mockAuthCodeCache[code]; // One-Time Code simulation
+      const resultObj = {
+        step_1_redirect: `${ctx.redirect_uri}?code=${code}`,
+        step_2_exchange_request: {
+          action: 'exchange_code',
+          code: code,
+          client_id: ctx.client_id,
+          client_secret: '<MASKED_IN_UI>'
+        },
+        step_3_response_from_21pass: {
+          success: true,
+          user: userPayload
+        }
+      };
+      document.getElementById('sim-json-output').textContent = JSON.stringify(resultObj, null, 2);
+      document.getElementById('sim-result-area').style.display = 'flex';
+      document.getElementById('sso-sim-overlay').classList.add('active');
+    }
+  </script>
+</body>
+</html>

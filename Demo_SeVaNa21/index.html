@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TeamConnect21 (SeVaNa21) - Interactive Demo Mock-up</title>
+    <style>
+        :root {
+            --primary-color: #00B900;
+            --primary-text-color: #ffffff;
+            --bubble-bg-mine: #00B900;
+            --bubble-text-mine: #ffffff;
+            --bg-color: #eef2f6;
+            --text-color: #1e293b;
+            --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+            --soft-border: rgba(226, 232, 240, 0.8);
+        }
+
+        * { -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", "Sarabun", sans-serif;
+            background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 10px; }
+
+        .demo-sandbox-pill {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            z-index: 1400;
+            background: rgba(15, 23, 42, 0.88);
+            color: #f8fafc;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2);
+            backdrop-filter: blur(8px);
+        }
+        .demo-sandbox-pill button {
+            background: rgba(255,255,255,0.16);
+            color: #ffffff;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 10.5px;
+            cursor: pointer;
+        }
+        .demo-sandbox-pill button:hover { background: rgba(255,255,255,0.28); }
+        @media (max-width: 859px) {
+            .demo-sandbox-pill { top: 6px; bottom: auto; right: 8px; font-size: 10px; padding: 4px 8px; }
+        }
+
+        .screen {
+            display: none;
+            background-color: #ffffff;
+            padding: 24px 22px;
+            border-radius: 20px;
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.1);
+            width: 100%;
+            max-width: 430px;
+            min-height: calc(100vh - 40px);
+            margin: 20px auto;
+            position: relative;
+            box-sizing: border-box;
+            overflow-y: auto;
+            animation: fadeInScreen 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeInScreen {
+            from { opacity: 0.6; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .screen.active { display: block; }
+
+        #mainAppScreen {
+            padding: 0;
+            border-radius: 0;
+            margin: 0 auto;
+            min-height: 100vh;
+            height: 100vh;
+            background-color: #f8fafc;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #mainAppScreen.active { display: flex; }
+
+        .app-header {
+            background: var(--primary-color);
+            color: var(--primary-text-color);
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 16px;
+            padding-bottom: 90px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .tab-content.active { display: block; animation: fadeInTab 0.2s ease-out; }
+        @keyframes fadeInTab {
+            from { opacity: 0.4; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 430px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 6px 10px 6px;
+            box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
+            z-index: 50;
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
+            box-sizing: border-box;
+        }
+        .nav-item {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            flex: 1;
+            padding: 4px 0;
+            border-radius: 12px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .nav-item.active { color: var(--primary-color); font-weight: 600; }
+        .nav-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 3px auto;
+            height: 24px;
+        }
+
+        .action-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .action-btn {
+            background: rgba(0, 185, 0, 0.1);
+            color: var(--primary-color);
+            border: 1px solid rgba(0, 185, 0, 0.2);
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: var(--primary-color); color: var(--primary-text-color); }
+
+        .search-bar {
+            width: 100%;
+            padding: 11px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: #ffffff;
+            margin-bottom: 14px;
+            box-sizing: border-box;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+        .search-bar:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 185, 0, 0.12); }
+
+        .list-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            border: 1px solid rgba(241, 245, 249, 0.9);
+            transition: all 0.18s;
+        }
+        .list-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07); }
+        .list-card.active-room-card {
+            border-color: var(--primary-color);
+            background: linear-gradient(to right, rgba(0, 185, 0, 0.05), #ffffff);
+        }
+
+        .avatar-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+            margin-right: 13px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: 600;
+            font-size: 20px;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
+        }
+        .info-text { flex-grow: 1; overflow: hidden; }
+        .info-text h4 { margin: 0; font-size: 14.5px; font-weight: 600; color: #1e293b; display: flex; align-items: center; }
+        .info-text p { margin: 4px 0 0; font-size: 12.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .unread-dot {
+            width: 10px; height: 10px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 8px;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+        .muted-icon { font-size: 12px; color: #94a3b8; margin-right: 5px; }
+
+        /* Chat Room */
+        #chatRoomScreen {
+            height: 100vh;
+            padding: 0;
+            border-radius: 0;
+            margin: 0 auto;
+            background-color: #e4ebf1;
+            background-image: radial-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 0);
+            background-size: 20px 20px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        #chatRoomScreen.active { display: flex; }
+
+        .chat-header {
+            flex-shrink: 0;
+            background-color: var(--primary-color);
+            color: var(--primary-text-color);
+            padding: 13px 16px;
+            display: flex;
+            align-items: center;
+            z-index: 20;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        .back-btn { background: none; border: none; color: var(--primary-text-color); font-size: 20px; margin-right: 12px; cursor: pointer; padding: 0; }
+        .chat-title { font-size: 15px; font-weight: 600; flex-grow: 1; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.16);
+            border: none;
+            color: var(--primary-text-color);
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 8px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-btn:hover { background: rgba(255, 255, 255, 0.28); }
+
+        .room-search-container {
+            flex-shrink: 0;
+            background-color: rgba(248, 250, 252, 0.95);
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            position: relative;
+        }
+        .room-search-input {
+            width: 100%;
+            padding: 8px 35px 8px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            background-color: #ffffff;
+            font-size: 13.5px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .room-search-clear {
+            position: absolute; right: 25px; background: none; border: none; color: #94a3b8; font-size: 15px; cursor: pointer; display: none;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 16px 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .date-divider { display: flex; justify-content: center; margin: 14px 0; width: 100%; pointer-events: none; }
+        .date-divider span {
+            background: rgba(15, 23, 42, 0.12);
+            color: #334155;
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 999px;
+        }
+
+        .msg-wrapper { display: flex; flex-direction: column; margin-bottom: 12px; max-width: 82%; }
+        .msg-wrapper.mine { align-self: flex-end; align-items: flex-end; }
+        .msg-wrapper.theirs { align-self: flex-start; flex-direction: row; gap: 8px; max-width: 86%; }
+        .msg-sender-name { font-size: 11.5px; font-weight: 600; color: #475569; margin-bottom: 3px; margin-left: 4px; }
+
+        .msg-bubble {
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 14.5px;
+            line-height: 1.45;
+            position: relative;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .mine .msg-bubble {
+            background: var(--bubble-bg-mine);
+            color: var(--bubble-text-mine);
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        .theirs .msg-bubble {
+            background-color: #ffffff;
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+        }
+        .theirs .msg-bubble.bot-bubble {
+            background: linear-gradient(to bottom, #ffffff, #f8fafc);
+            border-left: 3.5px solid #6366f1;
+        }
+        .msg-bubble.image-bubble { padding: 0 !important; background: transparent !important; box-shadow: none !important; line-height: 0 !important; }
+        .chat-image-wrap {
+            cursor: zoom-in; display: inline-block; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .chat-image-wrap img { display: block; max-width: 240px; max-height: 200px; object-fit: contain; }
+        .msg-bubble.file-bubble { padding: 8px 12px; border-radius: 14px; max-width: 240px; }
+        .msg-bubble.sticker-bubble { background: transparent !important; box-shadow: none !important; padding: 0 !important; }
+        .chat-sticker-img { max-width: 110px; max-height: 110px; display: block; border-radius: 8px; }
+
+        .quoted-msg-box {
+            background: rgba(0, 0, 0, 0.1);
+            border-left: 3px solid currentColor;
+            border-radius: 8px;
+            padding: 5px 9px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .theirs .quoted-msg-box { background: #f1f5f9; border-left-color: var(--primary-color); color: #475569; }
+        .quoted-msg-sender { font-weight: 700; font-size: 11px; display: block; }
+
+        .msg-time { font-size: 10px; color: #64748b; }
+        .msg-read-status { font-size: 10px; color: var(--primary-color); font-weight: 600; margin-right: 4px; }
+        .msg-actions-bar { display: inline-flex; align-items: center; gap: 4px; opacity: 0.55; transition: opacity 0.15s; }
+        .msg-wrapper:hover .msg-actions-bar { opacity: 1; }
+        .msg-action-icon-btn {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(203,213,225,0.85);
+            color: #475569;
+            width: 25px; height: 25px;
+            border-radius: 50%;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center; padding: 0;
+        }
+
+        /* Voice Bubble */
+        .msg-bubble.voice-bubble {
+            padding: 6px 10px !important;
+            border-radius: 20px !important;
+            min-width: 185px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .chat-voice-single-row { display: inline-flex; align-items: center; gap: 7px; width: 100%; }
+        .chat-voice-play-btn {
+            width: 26px; height: 26px; border-radius: 50%; border: none; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0;
+        }
+        .mine .chat-voice-play-btn { background: rgba(255,255,255,0.28); color: #fff; }
+        .theirs .chat-voice-play-btn { background: linear-gradient(135deg, #059669, #10b981); color: #fff; }
+        .chat-voice-progress-track { position: relative; flex: 1; min-width: 55px; height: 5px; border-radius: 999px; overflow: hidden; cursor: pointer; }
+        .mine .chat-voice-progress-track { background: rgba(255,255,255,0.28); }
+        .theirs .chat-voice-progress-track { background: #e2e8f0; }
+        .chat-voice-progress-bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; }
+        .mine .chat-voice-progress-bar { background: #ffffff; }
+        .theirs .chat-voice-progress-bar { background: #10b981; }
+        .chat-voice-time-text { font-size: 11px; font-weight: 600; font-family: monospace; }
+        .chat-voice-expire-tag { font-size: 9.5px; opacity: 0.82; }
+
+        .reply-preview-bar {
+            display: none; background: rgba(255,255,255,0.96); border-top: 1px solid #e2e8f0;
+            border-left: 4px solid var(--primary-color); padding: 8px 14px; align-items: center; justify-content: space-between; font-size: 12.5px;
+        }
+        .reply-preview-bar.active { display: flex; }
+        .reply-preview-title { font-weight: 700; color: var(--primary-color); font-size: 11.5px; }
+        .reply-preview-text { color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
+
+        .sticker-picker-container {
+            position: absolute; bottom: 72px; left: 12px; right: 12px;
+            background: rgba(255,255,255,0.97); border: 1px solid #e2e8f0; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(15,23,42,0.15); z-index: 99; padding: 12px;
+        }
+        .sticker-picker-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 6px; font-size: 13.5px; font-weight: 600; color: #475569; margin-bottom: 8px; }
+        .sticker-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; max-height: 180px; overflow-y: auto; }
+        .sticker-item { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 10px; }
+        .sticker-item:hover { background: rgba(0,0,0,0.05); transform: scale(1.08); }
+        .sticker-item img { width: 54px; height: 54px; object-fit: contain; }
+
+        .chat-input-area {
+            flex-shrink: 0; background: rgba(255,255,255,0.96); padding: 10px 12px;
+            display: flex; align-items: center; width: 100%; box-sizing: border-box; border-top: 1px solid #e2e8f0; position: relative;
+        }
+        .chat-input-area input[type="text"] {
+            flex-grow: 1; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 999px; font-size: 14.5px; outline: none; background: #f8fafc;
+        }
+        .chat-input-area button {
+            background: var(--primary-color); color: var(--primary-text-color); border: none; width: 40px; height: 40px;
+            border-radius: 50%; margin-left: 8px; font-size: 17px; cursor: pointer; display: flex; justify-content: center; align-items: center; flex-shrink: 0;
+        }
+        .chat-tool-btn { background: #f1f5f9 !important; color: #475569 !important; width: 36px !important; height: 36px !important; margin-left: 0 !important; margin-right: 5px !important; border: 1px solid #e2e8f0 !important; }
+        .chat-tools-group { display: inline-flex; align-items: center; }
+
+        /* Modals & Forms */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #ffffff; width: 92%; max-width: 400px; padding: 24px 20px; border-radius: 20px; position: relative; max-height: 85vh; overflow-y: auto; box-sizing: border-box; box-shadow: 0 20px 50px rgba(15,23,42,0.25); }
+        .close-modal { position: absolute; top: 14px; right: 16px; background: #f1f5f9; border: none; font-size: 15px; cursor: pointer; color: #475569; width: 32px; height: 32px; border-radius: 50%; }
+
+        h2 { text-align: center; color: var(--primary-color); margin: 10px 0 14px 0; font-weight: 700; }
+        .form-group { margin-bottom: 13px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; color: #334155; }
+        input[type="text"], input[type="password"], input[type="tel"], select {
+            width: 100%; padding: 10px 13px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-size: 14.5px; font-family: inherit; background: #f8fafc; outline: none;
+        }
+        button.btn-primary {
+            width: 100%; padding: 11px 16px; background-color: var(--primary-color); color: var(--primary-text-color);
+            border: none; border-radius: 12px; font-size: 14.5px; font-weight: 600; cursor: pointer; margin-top: 8px;
+        }
+        button.btn-secondary {
+            width: 100%; padding: 11px 16px; background-color: #f1f5f9; color: #334155;
+            border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14.5px; font-weight: 600; cursor: pointer; margin-top: 8px;
+        }
+        .app-logo { display: flex; justify-content: center; align-items: center; margin: 8px 0; font-size: 26px; font-weight: 800; color: var(--primary-color); }
+        .logo-badge { background-color: var(--primary-color); color: white; padding: 2px 8px; border-radius: 8px; font-size: 15px; margin-left: 6px; }
+
+        /* Demo Quick Login Card */
+        .demo-accounts-box {
+            margin-top: 16px; padding: 12px; border-radius: 14px; background: #f8fafc; border: 1px dashed #94a3b8;
+        }
+        .demo-account-chip {
+            display: flex; justify-content: space-between; align-items: center; padding: 8px 10px;
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 6px; cursor: pointer; transition: border-color 0.15s;
+        }
+        .demo-account-chip:hover { border-color: var(--primary-color); background: #f0fdf4; }
+
+        /* Switch & Color dots */
+        .switch-toggle { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
+        .switch-toggle input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #7c3aed; }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .color-dot { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.12); position: relative; }
+        .color-dot.active { border-color: #1e293b; transform: scale(1.1); }
+        .dot-black { background-color: #1e293b; } .dot-green { background-color: #00B900; }
+        .dot-red { background-color: #ff8a80; } .dot-blue { background-color: #80d8ff; }
+        .dot-pink { background-color: #ff80ab; } .dot-orange { background-color: #ffd180; }
+
+        /* Media Tabs */
+        .media-tabs { display: flex; border-bottom: 2px solid #f1f5f9; margin-bottom: 12px; }
+        .media-tab-btn { background: none; border: none; padding: 10px; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; flex: 1; border-bottom: 2px solid transparent; }
+        .media-tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        .media-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .media-image-item { aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; cursor: pointer; border: 1px solid #e2e8f0; }
+        .media-image-item img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Lightbox & Toast */
+        #imageLightboxModal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.92); z-index: 1200; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        #imageLightboxModal.active { display: flex; }
+        #lightboxImg { max-width: 92vw; max-height: 78vh; border-radius: 12px; }
+        #toastContainer { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; width: 90%; max-width: 360px; }
+        .modern-toast { background: rgba(15,23,42,0.92); color: #fff; padding: 11px 16px; border-radius: 14px; font-size: 13px; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(15,23,42,0.25); }
+
+        @keyframes pulseRed { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+        @keyframes soundWave { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+        .voice-wave-bar { width: 3px; background: #ef4444; border-radius: 2px; display: inline-block; animation: soundWave 0.6s ease-in-out infinite; }
+
+        /* Responsive Desktop 2-Column Split */
+        #desktopEmptyChatPlaceholder { display: none; }
+        @media (min-width: 860px) {
+            body.logged-in-mode { align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; height: 100vh; overflow: hidden; }
+            body.logged-in-mode #mainAppScreen {
+                display: flex !important; width: 380px; min-width: 360px; max-width: 390px;
+                height: calc(100vh - 40px); min-height: calc(100vh - 40px); margin: 0;
+                border-radius: 22px 0 0 22px; border-right: 1px solid #e2e8f0; position: relative;
+            }
+            body.logged-in-mode .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; max-width: 100%; border-radius: 0 0 0 22px; }
+            body.logged-in-mode #chatRoomScreen {
+                width: calc(100vw - 440px); max-width: 780px; height: calc(100vh - 40px); min-height: calc(100vh - 40px);
+                margin: 0; border-radius: 0 22px 22px 0; box-shadow: 8px 12px 36px rgba(15, 23, 42, 0.08);
+            }
+            body.logged-in-mode:not(.has-open-room) #desktopEmptyChatPlaceholder {
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                width: calc(100vw - 440px); max-width: 780px; height: calc(100vh - 40px);
+                background: rgba(255,255,255,0.88); border-radius: 0 22px 22px 0; text-align: center; padding: 30px; box-sizing: border-box;
+            }
+            body.logged-in-mode.has-open-room #chatRoomScreen { display: flex !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-sandbox-pill">
+        <span>🧪 DEMO MOCK-UP (Offline Sandbox)</span>
+        <button type="button" onclick="resetDemoData()">รีเซ็ตข้อมูลจำลอง</button>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <!-- Image Lightbox -->
+    <div id="imageLightboxModal" onclick="closeImageLightbox(event)">
+        <div style="position:absolute; top:18px; right:20px; display:flex; gap:10px;" onclick="event.stopPropagation()">
+            <button type="button" onclick="closeImageLightbox()" style="background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.3); padding:8px 14px; border-radius:999px; cursor:pointer;">✕ ปิด</button>
+        </div>
+        <img id="lightboxImg" src="" alt="Preview" onclick="event.stopPropagation()">
+        <div id="lightboxCaption" style="color:#e2e8f0; font-size:13px; margin-top:12px;" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <!-- 1. Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="app-logo">
+            <span>TeamConnect</span><span class="logo-badge">21</span>
+        </div>
+        <div style="text-align:center; font-size:12px; color:#059669; font-weight:600; margin-bottom:8px;">
+            Pro-Health Data BKK South • โหมดสาธิต (Demo Mock-up)
+        </div>
+        <h2>เข้าสู่ระบบ</h2>
+
+        <button type="button" onclick="openMockSSOChooser()" style="width:100%; padding:13px; background:linear-gradient(135deg, #059669, #10b981); color:white; border:none; border-radius:12px; font-weight:600; font-size:15px; cursor:pointer; box-shadow:0 6px 16px rgba(5,150,105,0.25);">
+            🔑 เข้าสู่ระบบด้วย 21PASS SSO (จำลอง)
+        </button>
+
+        <div style="display:flex; align-items:center; margin:16px 0; color:#94a3b8; font-size:12px;">
+            <div style="flex:1; border-bottom:1px solid #e2e8f0;"></div>
+            <span style="padding:0 10px; color:#64748b;">หรือเข้าสู่ระบบด้วย Username / PIN จำลอง</span>
+            <div style="flex:1; border-bottom:1px solid #e2e8f0;"></div>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Username (จำลอง)</label>
+                <input type="text" id="loginUsername" value="demo_opd" placeholder="เช่น demo_opd" required>
+            </div>
+            <div class="form-group">
+                <label>รหัสผ่าน (PIN 6 หลัก จำลอง)</label>
+                <input type="password" id="loginPassword" maxlength="6" value="123456" placeholder="••••••" required>
+            </div>
+            <button type="submit" class="btn-primary" style="background:#475569;">🔑 เข้าสู่ระบบ (Mockup)</button>
+        </form>
+
+        <button type="button" class="btn-secondary" onclick="showScreen('registerScreen')">📝 ทดลองหน้าลงทะเบียนสมาชิกใหม่</button>
+
+        <div class="demo-accounts-box">
+            <div style="font-size:12px; font-weight:700; color:#334155;">⚡ คลิกเพื่อสลับบัญชีทดสอบด่วน (รหัส PIN จำลองทั้งหมด: <code>123456</code>)</div>
+            <div id="quickDemoAccountsList"></div>
+        </div>
+    </div>
+
+    <!-- 2. Register Screen -->
+    <div id="registerScreen" class="screen">
+        <div class="app-logo"><span>TeamConnect</span><span class="logo-badge">21</span></div>
+        <h2>ลงทะเบียนสมาชิก (Demo)</h2>
+        <form id="registerForm">
+            <div class="form-group"><label>Username (a-z, 0-9 ไม่เกิน 8 ตัว)</label><input type="text" id="regUsername" maxlength="8" placeholder="เช่น demo99" required></div>
+            <div class="form-group"><label>รหัสผ่าน (PIN 6 หลัก)</label><input type="password" id="regPassword" maxlength="6" placeholder="123456" required></div>
+            <div class="form-group"><label>ชื่อ-นามสกุล</label><input type="text" id="regFullname" required></div>
+            <div class="form-group"><label>ชื่อเล่น (แสดงในห้องแชท)</label><input type="text" id="regNickname" required></div>
+            <div class="form-group">
+                <label>แผนก (21 แผนกของ ศบส.21)</label>
+                <select id="regDepartment" required></select>
+            </div>
+            <div class="form-group"><label>ตำแหน่ง</label><input type="text" id="regPosition"></div>
+            <div class="form-group"><label>LINE ID</label><input type="text" id="regLineid"></div>
+            <div class="form-group"><label>เบอร์โทรศัพท์มือถือ</label><input type="tel" id="regMobile"></div>
+            <div class="form-group"><label>เบอร์โทรศัพท์แผนก</label><input type="tel" id="regOfficePhone"></div>
+            <div class="form-group">
+                <label>สถานะเริ่มต้น</label>
+                <select id="regStatus">
+                    <option value="ออนไลน์" selected>ออนไลน์</option>
+                    <option value="ออฟไลน์">ออฟไลน์</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">ยืนยันสมัครสมาชิก (จำลอง)</button>
+            <button type="button" class="btn-secondary" onclick="showScreen('loginScreen')">ยกเลิก / กลับไปหน้าล็อกอิน</button>
+        </form>
+    </div>
+
+    <!-- 3. Main App Screen -->
+    <div id="mainAppScreen" class="screen">
+        <div class="app-header">
+            <span>TeamConnect</span>
+            <span style="background:rgba(255,255,255,0.22); padding:1px 7px; border-radius:6px; font-size:14px;">21</span>
+            <span style="font-size:10px; background:rgba(15,23,42,0.28); padding:2px 7px; border-radius:999px;">DEMO</span>
+        </div>
+
+        <div id="tab-chats" class="tab-content active">
+            <div class="action-row">
+                <h3 style="margin:0; color:#1e293b; font-size:17px;">ห้องแชทล่าสุด</h3>
+                <button class="action-btn" onclick="openGroupModal()">+ กลุ่ม/ห้องใหม่</button>
+            </div>
+            <input type="text" id="chatSearchInput" class="search-bar" placeholder="🔍 ค้นหาชื่อห้องแชท หรือข้อความ..." onkeyup="renderRecentChats()">
+            <div id="recentChatsContainer"></div>
+        </div>
+
+        <div id="tab-members" class="tab-content">
+            <h3 style="margin:0 0 6px 0; color:#1e293b; font-size:17px;">สมาชิกและกลุ่ม (21 แผนก)</h3>
+            <p style="font-size:12px; color:#64748b; margin-top:0; margin-bottom:14px;">แตะที่ชื่อเพื่อนเพื่อแชท | แตะหัวข้อแผนกเพื่อย่อ/ขยาย</p>
+            <div id="groupsListContainer"></div>
+            <div id="departmentsListContainer"></div>
+        </div>
+
+        <div id="tab-profile" class="tab-content">
+            <div class="action-row" style="margin-bottom:0;">
+                <h3 style="margin:0; color:#1e293b; font-size:17px;">โปรไฟล์ของคุณ</h3>
+                <button class="action-btn" onclick="openEditProfileModal()">✏️ แก้ไขข้อมูล</button>
+            </div>
+            <div id="userProfileInfo" style="background:#ffffff; padding:20px; border-radius:18px; text-align:center; box-shadow:var(--card-shadow); border:1px solid #f1f5f9; margin-top:14px; margin-bottom:15px;"></div>
+
+            <div style="background:linear-gradient(135deg, #f3e8ff, #ede9fe); border:1px solid #ddd6fe; padding:14px 16px; border-radius:16px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span style="font-weight:600; color:#6d28d9; font-size:14.5px; display:block;">🟣 โหมดสมาธิ (Focus Mode)</span>
+                    <span style="font-size:11.5px; color:#7c3aed;">ปิดการแจ้งเตือนจากทุกห้องแชทชั่วคราว</span>
+                </div>
+                <label class="switch-toggle">
+                    <input type="checkbox" id="focusModeToggle" onchange="toggleFocusMode(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div style="background:#ffffff; padding:16px; border-radius:16px; margin-bottom:15px; box-shadow:var(--card-shadow); border:1px solid #f1f5f9;">
+                <span style="font-weight:600; color:#334155; font-size:14px; display:block; margin-bottom:10px;">🎨 ธีมสีของระบบ</span>
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                    <div class="color-dot dot-black" onclick="selectTheme('black')" title="ดำโมเดิร์น"></div>
+                    <div class="color-dot dot-green" onclick="selectTheme('green')" title="เขียวมรกต"></div>
+                    <div class="color-dot dot-red" onclick="selectTheme('red')" title="แดงพาสเทล"></div>
+                    <div class="color-dot dot-blue" onclick="selectTheme('blue')" title="ฟ้าพาสเทล"></div>
+                    <div class="color-dot dot-pink" onclick="selectTheme('pink')" title="ชมพูพาสเทล"></div>
+                    <div class="color-dot dot-orange" onclick="selectTheme('orange')" title="ส้มพาสเทล"></div>
+                </div>
+            </div>
+
+            <button onclick="showToast('จำลองการเปิดรับ Push Notification (FCM) สำเร็จ!', '🔔')" class="btn-primary" style="background:#0284c7;">🔔 ทดสอบเปิดการแจ้งเตือน (FCM Mock)</button>
+            <button onclick="openBotWebhookManager()" class="btn-primary" style="background:linear-gradient(135deg, #4f46e5, #6366f1);">🤖 ศูนย์รวม Bot & Webhook (Sandbox)</button>
+            <button onclick="openStickerManager()" class="btn-primary" style="background:#10b981;">⭐ จัดการสติกเกอร์ (Mock)</button>
+            <button onclick="openChangePasswordModal()" class="btn-primary" style="background:#f59e0b;">🔑 เปลี่ยนรหัสผ่าน (PIN)</button>
+            <button onclick="logoutUser()" class="btn-secondary" style="background:#fee2e2; color:#dc2626; border-color:#fecaca;">ออกจากระบบ</button>
+        </div>
+
+        <div class="bottom-nav">
+            <div id="nav-tab-chats" class="nav-item active" onclick="switchTab('tab-chats')">
+                <span class="nav-icon">💬</span>แชท
+            </div>
+            <div id="nav-tab-members" class="nav-item" onclick="switchTab('tab-members')">
+                <span class="nav-icon">👥</span>สมาชิกและกลุ่ม
+            </div>
+            <div id="nav-tab-profile" class="nav-item" onclick="switchTab('tab-profile')">
+                <span class="nav-icon">👤</span>โปรไฟล์
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Empty State -->
+    <div id="desktopEmptyChatPlaceholder">
+        <div style="width:84px; height:84px; border-radius:50%; background:rgba(0,185,0,0.08); color:var(--primary-color); display:flex; align-items:center; justify-content:center; font-size:38px; margin-bottom:16px;">💬</div>
+        <h3 style="margin:0 0 8px 0; color:#1e293b; font-size:20px;">ยินดีต้อนรับสู่ TeamConnect 21 (Demo)</h3>
+        <p style="margin:0; font-size:14px; color:#64748b; max-width:340px; line-height:1.6;">เลือกห้องสนทนาจากแถบด้านซ้าย หรือเลือกเพื่อนจากแท็บ "สมาชิกและกลุ่ม" เพื่อทดลองใช้งาน UX จริงแบบ Offline Sandbox</p>
+    </div>
+
+    <!-- 4. Chat Room Screen -->
+    <div id="chatRoomScreen" class="screen">
+        <div id="dragDropOverlay" style="display:none; position:absolute; inset:0; background:rgba(15,23,42,0.7); border:3px dashed var(--primary-color); z-index:100; justify-content:center; align-items:center; flex-direction:column; color:white; pointer-events:none;">
+            <div style="font-size:48px;">📥</div>
+            <div style="font-weight:bold; font-size:18px;">วางไฟล์ที่นี่เพื่อทดลองส่ง (Demo)</div>
+        </div>
+
+        <div class="chat-header">
+            <button type="button" class="back-btn" onclick="closeChatRoom()" title="ย้อนกลับ">❮</button>
+            <div class="chat-title" id="chatRoomTitle" onclick="showRoomInfo()">ห้องแชท</div>
+            <button class="icon-btn" onclick="openVoiceNotesModal()" title="ห้องข้อความเสียงด่วน">🎙️</button>
+            <button class="icon-btn" onclick="showSharedFiles()" title="คลังไฟล์และรูปภาพ">📁</button>
+            <button class="icon-btn" id="btnMuteChat" onclick="toggleMuteRoom()" title="แจ้งเตือนห้องนี้">🔔</button>
+        </div>
+
+        <div class="room-search-container">
+            <input type="text" id="roomMessageSearchInput" class="room-search-input" placeholder="🔍 ค้นหาข้อความหรือชื่อไฟล์ในห้องนี้..." onkeyup="renderChatMessages()">
+            <button id="roomMessageSearchClear" class="room-search-clear" onclick="clearRoomSearch()">✕</button>
+        </div>
+
+        <div class="chat-messages" id="chatMessagesArea"></div>
+
+        <div id="stickerPickerContainer" class="sticker-picker-container" style="display:none;">
+            <div class="sticker-picker-header">
+                <span>เลือกสติกเกอร์ (Mock)</span>
+                <button type="button" onclick="toggleStickerPicker()" style="background:none; border:none; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+            <div class="sticker-list" id="stickerPickerList"></div>
+        </div>
+
+        <div id="replyPreviewBar" class="reply-preview-bar">
+            <div>
+                <div id="replyPreviewSender" class="reply-preview-title">ตอบกลับ</div>
+                <div id="replyPreviewText" class="reply-preview-text">...</div>
+            </div>
+            <button type="button" onclick="cancelReplyMessage()" style="background:none; border:none; color:#94a3b8; font-size:16px; cursor:pointer;">✕</button>
+        </div>
+
+        <form class="chat-input-area" id="chatForm">
+            <div id="voiceRecordingBar" style="display:none; position:absolute; inset:0; background:#fff; z-index:15; align-items:center; justify-content:space-between; padding:0 12px; border:1.5px solid #ef4444;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="width:10px; height:10px; background:#ef4444; border-radius:50%; animation:pulseRed 1s infinite;"></span>
+                    <span class="voice-wave-bar"></span><span class="voice-wave-bar"></span><span class="voice-wave-bar"></span>
+                    <span id="voiceRecTimerText" style="font-size:13px; font-weight:bold; color:#ef4444; font-family:monospace;">0:00 / 0:15</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" onclick="cancelMockVoiceRec()" style="width:auto; height:auto; border-radius:14px; background:#f1f5f9; color:#64748b; padding:5px 10px; font-size:11.5px; margin:0;">✕ ยกเลิก</button>
+                    <button type="button" onclick="finishMockVoiceRec()" style="width:auto; height:auto; border-radius:14px; background:#10b981; color:#fff; padding:5px 12px; font-size:11.5px; margin:0;">➤ ส่งเสียงจำลอง</button>
+                </div>
+            </div>
+
+            <input type="file" id="chatFileInput" style="display:none;" multiple onchange="handleMockFileSelect(this)">
+            <div class="chat-tools-group">
+                <button type="button" class="chat-tool-btn" onclick="document.getElementById('chatFileInput').click()" title="แนบไฟล์/รูปภาพ">+</button>
+                <button type="button" class="chat-tool-btn" onclick="startMockVoiceRec()" title="อัดเสียงด่วน (จำลอง 15 วิ)">🎙️</button>
+                <button type="button" class="chat-tool-btn" onclick="toggleStickerPicker()" title="สติกเกอร์">⭐</button>
+            </div>
+            <input type="text" id="chatMessageInput" placeholder="พิมพ์ข้อความ..." autocomplete="off">
+            <button type="submit" title="ส่งข้อความ">➤</button>
+        </form>
+    </div>
+
+    <!-- Voice Notes Modal -->
+    <div id="voiceNotesModal" class="modal">
+        <div class="modal-content" style="padding:0; overflow:hidden; max-width:420px;">
+            <div style="background:linear-gradient(135deg, #059669, #10b981); color:white; padding:14px 18px; display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <div style="font-weight:bold; font-size:15px;">🎙️ ห้องข้อความเสียงด่วน</div>
+                    <div style="font-size:11px; opacity:0.9;">เสียงจำลองหมดอายุอัตโนมัติเมื่อครบ 8 ชม.</div>
+                </div>
+                <button type="button" onclick="closeVoiceNotesModal()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer;">✕</button>
+            </div>
+            <div style="padding:12px 16px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+                <button type="button" onclick="sendInstantDemoVoiceFromModal()" class="btn-primary" style="margin:0; background:linear-gradient(135deg, #059669, #10b981);">🎙️ ส่งข้อความเสียงจำลอง (4 วิ)</button>
+            </div>
+            <div id="voiceNotesList" style="padding:14px; display:flex; flex-direction:column; gap:10px; max-height:50vh; overflow-y:auto; background:#f8fafc;"></div>
+        </div>
+    </div>
+
+    <!-- Generic App Modal -->
+    <div id="appModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">✕</button>
+            <h3 id="modalTitle" style="margin-top:0; color:var(--primary-color); border-bottom:1px solid #f1f5f9; padding-bottom:10px;">หัวข้อ</h3>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="./mock-data.js"></script>
+    <script>
+        const STORAGE_KEY = 'sevana21_demo_state_v1';
+        const THEMES = {
+            black:  { primary: '#1e293b', text: '#ffffff', bubbleBg: '#1e293b', bubbleText: '#ffffff' },
+            green:  { primary: '#00B900', text: '#ffffff', bubbleBg: '#00B900', bubbleText: '#ffffff' },
+            red:    { primary: '#ff8a80', text: '#333333', bubbleBg: '#ff8a80', bubbleText: '#333333' },
+            blue:   { primary: '#80d8ff', text: '#333333', bubbleBg: '#80d8ff', bubbleText: '#333333' },
+            pink:   { primary: '#ff80ab', text: '#333333', bubbleBg: '#ff80ab', bubbleText: '#333333' },
+            orange: { primary: '#ffd180', text: '#333333', bubbleBg: '#ffd180', bubbleText: '#333333' }
+        };
+
+        let demoState = loadDemoState();
+        let currentUser = null;
+        let currentRoom = null;
+        let currentReply = null;
+        let demoAudio = new Audio();
+        let playingVoiceId = null;
+        let playbackSpeed = 1.0;
+        let mockRecTimer = null;
+        let mockRecSec = 0;
+
+        function loadDemoState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const fresh = window.SEVANA_DEMO_DATA.createInitialState();
+            saveDemoState(fresh);
+            return fresh;
+        }
+
+        function saveDemoState(state = demoState) {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+        }
+
+        function resetDemoData() {
+            if (!confirm('ต้องการรีเซ็ตข้อมูลจำลองทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) return;
+            localStorage.removeItem(STORAGE_KEY);
+            demoState = window.SEVANA_DEMO_DATA.createInitialState();
+            saveDemoState(demoState);
+            if (currentUser) {
+                currentUser = demoState.users[currentUser.username] || demoState.users.demo_opd;
+                currentRoom = null;
+                showScreen('mainAppScreen');
+                renderAllAppViews();
+            }
+            showToast('รีเซ็ตข้อมูลจำลองเรียบร้อยแล้ว', '🔄');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function showToast(message, icon = '✨') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'modern-toast';
+            toast.innerHTML = `<span>${icon}</span><span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 2800);
+        }
+
+        function applyTheme(themeKey) {
+            const theme = THEMES[themeKey] || THEMES.green;
+            const root = document.documentElement;
+            root.style.setProperty('--primary-color', theme.primary);
+            root.style.setProperty('--primary-text-color', theme.text);
+            root.style.setProperty('--bubble-bg-mine', theme.bubbleBg);
+            root.style.setProperty('--bubble-text-mine', theme.bubbleText);
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            const dot = document.querySelector(`.dot-${themeKey}`);
+            if (dot) dot.classList.add('active');
+        }
+
+        function selectTheme(themeKey) {
+            if (!currentUser) return;
+            currentUser.themeColor = themeKey;
+            demoState.users[currentUser.username].themeColor = themeKey;
+            saveDemoState();
+            applyTheme(themeKey);
+            showToast('เปลี่ยนธีมสีเรียบร้อยแล้ว', '🎨');
+        }
+
+        function toggleFocusMode(enabled) {
+            if (!currentUser) return;
+            currentUser.focusMode = enabled;
+            demoState.users[currentUser.username].focusMode = enabled;
+            saveDemoState();
+            showToast(enabled ? 'เปิดโหมดสมาธิ (ปิดแจ้งเตือนชั่วคราว)' : 'ปิดโหมดสมาธิแล้ว', enabled ? '🔕' : '🔔');
+            renderRecentChats();
+            if (currentRoom) updateMuteButtonUI();
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId === 'loginScreen' || screenId === 'registerScreen') {
+                document.body.classList.remove('logged-in-mode', 'has-open-room');
+            } else if (screenId === 'mainAppScreen') {
+                document.body.classList.add('logged-in-mode');
+                document.body.classList.remove('has-open-room');
+            } else if (screenId === 'chatRoomScreen') {
+                document.body.classList.add('logged-in-mode', 'has-open-room');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('nav-' + tabId).classList.add('active');
+        }
+
+        function openModal(title, html) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('appModal').style.display = 'flex';
+        }
+        function closeModal() { document.getElementById('appModal').style.display = 'none'; }
+
+        function openImageLightbox(url, caption = '') {
+            document.getElementById('lightboxImg').src = url;
+            document.getElementById('lightboxCaption').innerText = caption;
+            document.getElementById('imageLightboxModal').classList.add('active');
+        }
+        function closeImageLightbox() { document.getElementById('imageLightboxModal').classList.remove('active'); }
+
+        // Init Login Quick Accounts & Dept Dropdown
+        (function initStaticUI() {
+            const deptSelect = document.getElementById('regDepartment');
+            deptSelect.innerHTML = '<option value="" disabled selected>-- เลือกแผนก --</option>' +
+                window.SEVANA_DEMO_DATA.DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join('');
+
+            const box = document.getElementById('quickDemoAccountsList');
+            box.innerHTML = window.SEVANA_DEMO_DATA.ACCOUNTS.map(acc => `
+                <div class="demo-account-chip" onclick="quickLogin('${acc.username}')">
+                    <div>
+                        <div style="font-size:13px; font-weight:700; color:#1e293b;">${escapeHtml(acc.username)}</div>
+                        <div style="font-size:11px; color:#64748b;">${escapeHtml(acc.roleLabel)}</div>
+                    </div>
+                    <span style="font-size:11px; color:#059669; font-weight:700;">เข้าใช้งาน ➔</span>
+                </div>
+            `).join('');
+        })();
+
+        function quickLogin(username) {
+            const user = demoState.users[username];
+            if (!user) return;
+            loginAsUser(user, `เข้าสู่ระบบด้วยบัญชีจำลอง (${username})`);
+        }
+
+        function openMockSSOChooser() {
+            const html = `
+                <p style="font-size:13px; color:#475569; margin-top:0;">จำลองการยืนยันตัวตนผ่าน <b>21PASS SSO</b> (OAuth2 Code Exchange)</p>
+                ${window.SEVANA_DEMO_DATA.ACCOUNTS.map(acc => `
+                    <button type="button" class="btn-secondary" style="text-align:left; display:flex; justify-content:space-between; align-items:center;" onclick="closeModal(); quickLogin('${acc.username}')">
+                        <span>🔑 ${escapeHtml(acc.ssoDisplayName)}</span>
+                        <span style="font-size:11px; color:#059669;">SSO</span>
+                    </button>
+                `).join('')}
+            `;
+            openModal('🔑 21PASS SSO (จำลอง)', html);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+            const pin = document.getElementById('loginPassword').value.trim();
+            const user = demoState.users[username];
+            if (!user || user.pin !== pin) {
+                alert('Username หรือ PIN จำลองไม่ถูกต้อง (ลองใช้ demo_opd / 123456)');
+                return;
+            }
+            loginAsUser(user, `เข้าสู่ระบบสำเร็จ (${username})`);
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim().toLowerCase();
+            const pin = document.getElementById('regPassword').value.trim();
+            if (!/^[a-z0-9]{1,8}$/.test(username)) return alert('Username ต้องเป็น a-z หรือ 0-9 (1-8 ตัวอักษร)');
+            if (!/^[0-9]{6}$/.test(pin)) return alert('PIN ต้องเป็นตัวเลข 6 หลัก');
+            if (demoState.users[username]) return alert('Username นี้มีอยู่แล้วในข้อมูลจำลอง');
+
+            const newUser = {
+                uid: 'mock-uid-' + Date.now(),
+                username,
+                pin,
+                fullname: document.getElementById('regFullname').value.trim(),
+                nickname: document.getElementById('regNickname').value.trim(),
+                department: document.getElementById('regDepartment').value,
+                position: document.getElementById('regPosition').value.trim(),
+                lineid: document.getElementById('regLineid').value.trim(),
+                mobile: document.getElementById('regMobile').value.trim(),
+                office_phone: document.getElementById('regOfficePhone').value.trim(),
+                icon: '🆕',
+                profile_url: '',
+                status: document.getElementById('regStatus').value,
+                themeColor: 'green',
+                focusMode: false,
+                e2eeEnabled: true,
+                createdAt: Date.now()
+            };
+            demoState.users[username] = newUser;
+            ensureUserChatsInitialized(username);
+            saveDemoState();
+            loginAsUser(newUser, 'สมัครสมาชิกจำลองและเข้าสู่ระบบสำเร็จ!');
+        });
+
+        function ensureUserChatsInitialized(username) {
+            if (!demoState.userChats[username]) {
+                demoState.userChats[username] = {};
+                Object.entries(demoState.rooms).forEach(([rId, room]) => {
+                    if (room.members && room.members[username]) {
+                        demoState.userChats[username][rId] = {
+                            roomId: rId, type: 'group', roomName: room.name,
+                            lastMessage: 'เข้าร่วมกลุ่มแล้ว', timestamp: Date.now(), unread: false, pinned: false, muted: false, hidden: false
+                        };
+                    }
+                });
+            }
+        }
+
+        function loginAsUser(user, toastMsg) {
+            currentUser = user;
+            ensureUserChatsInitialized(user.username);
+            currentRoom = null;
+            applyTheme(user.themeColor || 'green');
+            showScreen('mainAppScreen');
+            switchTab('tab-chats');
+            renderAllAppViews();
+            showToast(toastMsg, '✅');
+        }
+
+        function logoutUser() {
+            if (!confirm('ออกจากระบบ Demo?')) return;
+            currentUser = null;
+            currentRoom = null;
+            applyTheme('green');
+            showScreen('loginScreen');
+        }
+
+        function renderAllAppViews() {
+            renderOwnProfile();
+            renderRecentChats();
+            renderMembersDirectory();
+        }
+
+        function renderOwnProfile() {
+            if (!currentUser) return;
+            const statusColor = currentUser.status === 'ออนไลน์' ? '#00B900' : '#f59e0b';
+            const statusBg = currentUser.status === 'ออนไลน์' ? '#e9f5e9' : '#fff7ed';
+            document.getElementById('userProfileInfo').innerHTML = `
+                <div class="avatar-circle" style="width:84px; height:84px; font-size:40px; margin:0 auto 10px auto; border:3px solid var(--primary-color); background:#e9f5e9; color:var(--primary-color);">${escapeHtml(currentUser.icon || currentUser.nickname.substring(0,2))}</div>
+                <h3 style="margin:8px 0 0;">คุณ ${escapeHtml(currentUser.nickname)}</h3>
+                <p style="margin:4px 0; color:#64748b; font-size:13px;">${escapeHtml(currentUser.fullname)}<br>${escapeHtml(currentUser.department)} | ${escapeHtml(currentUser.position || '-')}</p>
+                <span style="display:inline-block; margin-top:6px; padding:4px 12px; background:${statusBg}; color:${statusColor}; border-radius:15px; font-size:12.5px; font-weight:bold;">● ${escapeHtml(currentUser.status)}</span>
+            `;
+            document.getElementById('focusModeToggle').checked = !!currentUser.focusMode;
+            applyTheme(currentUser.themeColor || 'green');
+        }
+
+        function renderRecentChats() {
+            if (!currentUser) return;
+            const container = document.getElementById('recentChatsContainer');
+            const query = (document.getElementById('chatSearchInput').value || '').toLowerCase().trim();
+            const map = demoState.userChats[currentUser.username] || {};
+            let chats = Object.values(map).filter(c => !c.hidden);
+
+            chats.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return (b.timestamp || 0) - (a.timestamp || 0);
+            });
+
+            chats = chats.filter(c => {
+                const name = getChatDisplayName(c).toLowerCase();
+                return !query || name.includes(query) || (c.lastMessage || '').toLowerCase().includes(query);
+            });
+
+            if (chats.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8;">ไม่พบห้องแชท (ลองกดเลือกเพื่อนในแท็บ "สมาชิกและกลุ่ม")</div>';
+                return;
+            }
+
+            container.innerHTML = chats.map(c => {
+                const name = getChatDisplayName(c);
+                const icon = getChatIcon(c);
+                const isActive = currentRoom && currentRoom.id === c.roomId ? 'active-room-card' : '';
+                const muted = c.muted || currentUser.focusMode ? '<span class="muted-icon">🔕</span>' : '';
+                const unread = c.unread ? '<span class="unread-dot"></span>' : '';
+                const pinIcon = c.pinned ? '📌' : '📍';
+                return `
+                    <div class="list-card chat-item-card ${isActive}" onclick="openChatRoom('${c.roomId}', '${c.type}', '${c.targetUsername || ''}')">
+                        <div class="avatar-circle" style="background:${c.type === 'group' ? '#0ea5e9' : 'var(--primary-color)'};">${icon}</div>
+                        <div class="info-text">
+                            <h4>${muted}${escapeHtml(name)} ${unread}</h4>
+                            <p style="${c.unread ? 'font-weight:bold; color:#0f172a;' : ''}">${escapeHtml(c.lastMessage || 'เริ่มการสนทนา')}</p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px; padding-left:8px;">
+                            <button onclick="event.stopPropagation(); togglePin('${c.roomId}')" style="background:none; border:none; cursor:pointer; font-size:15px; opacity:${c.pinned ? 1 : 0.35};" title="ปักหมุด">${pinIcon}</button>
+                            <button onclick="event.stopPropagation(); hideChat('${c.roomId}')" style="background:none; border:none; cursor:pointer; font-size:12px; color:#94a3b8;" title="ซ่อนแชท">✖️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getChatDisplayName(chat) {
+            if (chat.type === 'dm' && chat.targetUsername && demoState.users[chat.targetUsername]) {
+                return demoState.users[chat.targetUsername].nickname;
+            }
+            if (demoState.rooms[chat.roomId]) return demoState.rooms[chat.roomId].name;
+            return chat.roomName || 'ห้องสนทนา';
+        }
+
+        function getChatIcon(chat) {
+            if (chat.type === 'dm' && chat.targetUsername && demoState.users[chat.targetUsername]) {
+                return demoState.users[chat.targetUsername].icon || '👤';
+            }
+            if (demoState.rooms[chat.roomId]) return demoState.rooms[chat.roomId].icon || '💬';
+            return '💬';
+        }
+
+        function togglePin(roomId) {
+            const chat = demoState.userChats[currentUser.username][roomId];
+            if (!chat) return;
+            chat.pinned = !chat.pinned;
+            saveDemoState();
+            renderRecentChats();
+            showToast(chat.pinned ? 'ปักหมุดแชทแล้ว' : 'ยกเลิกปักหมุดแล้ว', '📌');
+        }
+
+        function hideChat(roomId) {
+            const chat = demoState.userChats[currentUser.username][roomId];
+            if (!chat) return;
+            chat.hidden = true;
+            saveDemoState();
+            renderRecentChats();
+            showToast('ซ่อนห้องแชทชั่วคราวแล้ว', '👁️');
+        }
+
+        function renderMembersDirectory() {
+            const gContainer = document.getElementById('groupsListContainer');
+            const myGroups = Object.entries(demoState.rooms).filter(([, r]) => r.members && r.members[currentUser.username]);
+            gContainer.innerHTML = `
+                <details open style="margin-bottom:12px; background:#fff; border-radius:14px; padding:12px; border:1px solid #e2e8f0;">
+                    <summary style="font-weight:600; color:var(--primary-color); cursor:pointer;">💬 กลุ่มของฉัน (${myGroups.length})</summary>
+                    <div style="margin-top:10px;">
+                        ${myGroups.map(([id, r]) => `
+                            <div class="list-card" style="box-shadow:none; border:1px solid #f1f5f9; margin-bottom:6px;" onclick="openChatRoom('${id}', 'group')">
+                                <div class="avatar-circle" style="width:36px; height:36px; font-size:17px; background:#0ea5e9;">${r.icon || '💬'}</div>
+                                <div class="info-text"><h4 style="font-size:14px;">${escapeHtml(r.name)}</h4></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </details>
+            `;
+
+            const dContainer = document.getElementById('departmentsListContainer');
+            const grouped = {};
+            window.SEVANA_DEMO_DATA.DEPARTMENTS.forEach(d => grouped[d] = []);
+            Object.values(demoState.users).forEach(u => {
+                if (!grouped[u.department]) grouped[u.department] = [];
+                grouped[u.department].push(u);
+            });
+
+            dContainer.innerHTML = Object.entries(grouped).map(([dept, users]) => `
+                <details ${users.length > 0 ? 'open' : ''} style="margin-bottom:10px; background:#fff; border-radius:14px; padding:12px; border:1px solid #e2e8f0;">
+                    <summary style="font-weight:600; color:var(--primary-color); cursor:pointer;">
+                        📁 แผนก${escapeHtml(dept)} <span style="float:right; font-size:12px; color:#94a3b8; font-weight:normal;">${users.length} คน ▼</span>
+                    </summary>
+                    <div style="margin-top:10px;">
+                        ${users.length === 0 ? '<div style="font-size:12px; color:#94a3b8; padding:4px 0;">(ไม่มีข้อมูลจำลองในแผนกนี้)</div>' : users.map(u => {
+                            const sColor = u.status === 'ออนไลน์' ? '#00B900' : '#f59e0b';
+                            return `
+                                <div class="list-card" style="box-shadow:none; border:1px solid #f1f5f9; margin-bottom:6px;" onclick="openDirectMessage('${u.username}')">
+                                    <div class="avatar-circle" style="width:36px; height:36px; font-size:18px; background:var(--primary-color);">${u.icon || '👤'}</div>
+                                    <div class="info-text">
+                                        <h4 style="font-size:13.5px;">${escapeHtml(u.fullname)} (${escapeHtml(u.nickname)})</h4>
+                                        <p style="font-size:12px;">${escapeHtml(u.position || '')} <span style="color:${sColor}; font-weight:bold;">● ${escapeHtml(u.status)}</span></p>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </details>
+            `).join('');
+        }
+
+        function openDirectMessage(targetUsername) {
+            if (targetUsername === currentUser.username) return showToast('ไม่สามารถแชทหาตัวเองได้ครับ', '⚠️');
+            const pair = [currentUser.username, targetUsername].sort();
+            const dmId = `DM_${pair[0]}_${pair[1]}`;
+            if (!demoState.userChats[currentUser.username][dmId]) {
+                demoState.userChats[currentUser.username][dmId] = {
+                    roomId: dmId, type: 'dm', targetUsername, lastMessage: 'เริ่มการสนทนา', timestamp: Date.now(), unread: false, pinned: false, muted: false, hidden: false
+                };
+            } else {
+                demoState.userChats[currentUser.username][dmId].hidden = false;
+            }
+            if (!demoState.messages[dmId]) demoState.messages[dmId] = {};
+            saveDemoState();
+            openChatRoom(dmId, 'dm', targetUsername);
+        }
+
+        function openChatRoom(roomId, type = 'group', targetUsername = '') {
+            if (!targetUsername && roomId.startsWith('DM_')) {
+                const parts = roomId.replace('DM_', '').split('_');
+                targetUsername = parts.find(u => u !== currentUser.username) || '';
+            }
+            currentRoom = { id: roomId, type, targetUsername };
+            cancelReplyMessage();
+            document.getElementById('roomMessageSearchInput').value = '';
+            document.getElementById('roomMessageSearchClear').style.display = 'none';
+
+            if (demoState.userChats[currentUser.username]?.[roomId]) {
+                demoState.userChats[currentUser.username][roomId].unread = false;
+                demoState.userChats[currentUser.username][roomId].hidden = false;
+                saveDemoState();
+            }
+
+            const title = getChatDisplayName({ roomId, type, targetUsername });
+            document.getElementById('chatRoomTitle').innerHTML = `🔒 ${escapeHtml(title)} <span style="font-size:10px; opacity:0.85; font-weight:normal;">(E2EE)</span>`;
+            updateMuteButtonUI();
+            showScreen('chatRoomScreen');
+            renderRecentChats();
+            renderChatMessages();
+            scrollToBottom();
+        }
+
+        function closeChatRoom() {
+            currentRoom = null;
+            showScreen('mainAppScreen');
+            renderRecentChats();
+        }
+
+        function updateMuteButtonUI() {
+            const chat = demoState.userChats[currentUser.username]?.[currentRoom.id];
+            const isMuted = currentUser.focusMode || (chat && chat.muted);
+            document.getElementById('btnMuteChat').innerText = isMuted ? '🔕' : '🔔';
+        }
+
+        function toggleMuteRoom() {
+            const chat = demoState.userChats[currentUser.username]?.[currentRoom.id];
+            if (!chat) return;
+            chat.muted = !chat.muted;
+            saveDemoState();
+            updateMuteButtonUI();
+            showToast(chat.muted ? 'ปิดเสียงแจ้งเตือนห้องนี้แล้ว' : 'เปิดเสียงแจ้งเตือนห้องนี้แล้ว', chat.muted ? '🔕' : '🔔');
+        }
+
+        function getDateLabel(ts) {
+            const d = new Date(ts || Date.now());
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            const diff = Math.round((today - target) / 86400000);
+            if (diff === 0) return 'วันนี้';
+            if (diff === 1) return 'เมื่อวานนี้';
+            return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+        }
+
+        function renderChatMessages() {
+            if (!currentRoom) return;
+            const area = document.getElementById('chatMessagesArea');
+            const query = (document.getElementById('roomMessageSearchInput').value || '').toLowerCase().trim();
+            document.getElementById('roomMessageSearchClear').style.display = query ? 'block' : 'none';
+
+            const msgMap = demoState.messages[currentRoom.id] || {};
+            const entries = Object.entries(msgMap).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+
+            let html = '';
+            let lastDate = null;
+
+            entries.forEach(([msgId, msg]) => {
+                const hay = ((msg.text || '') + ' ' + (msg.fileName || '')).toLowerCase();
+                if (query && !hay.includes(query)) return;
+
+                const dLabel = getDateLabel(msg.timestamp);
+                if (dLabel !== lastDate) {
+                    html += `<div class="date-divider"><span>${escapeHtml(dLabel)}</span></div>`;
+                    lastDate = dLabel;
+                }
+
+                const isMine = msg.senderUsername === currentUser.username;
+                const isBot = !!msg.isBot || msg.messageType === 'bot';
+                const dt = new Date(msg.timestamp || Date.now());
+                const timeStr = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+                const lockIcon = msg.e2ee ? '<span title="เข้ารหัส E2EE จำลอง">🔒 </span>' : '';
+
+                let quoteHtml = '';
+                if (msg.replyTo) {
+                    quoteHtml = `<div class="quoted-msg-box"><span class="quoted-msg-sender">↩️ คุณ${escapeHtml(msg.replyTo.senderNickname)}</span>${escapeHtml(msg.replyTo.text)}</div>`;
+                }
+
+                let bodyHtml = '';
+                let bubbleClass = 'msg-bubble';
+                if (msg.messageType === 'image') {
+                    bubbleClass += ' image-bubble';
+                    bodyHtml = `${quoteHtml}<div class="chat-image-wrap" onclick="openImageLightbox('${msg.fileUrl}', '${escapeHtml(msg.fileName || 'รูปภาพ')}')"><img src="${msg.fileUrl}" alt="${escapeHtml(msg.fileName || 'img')}"></div>`;
+                } else if (msg.messageType === 'sticker') {
+                    bubbleClass += ' sticker-bubble';
+                    bodyHtml = `<img src="${msg.stickerUrl}" class="chat-sticker-img" alt="sticker">`;
+                } else if (msg.messageType === 'file') {
+                    bubbleClass += ' file-bubble';
+                    bodyHtml = `${quoteHtml}<div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="showToast('เปิดไฟล์ตัวอย่าง: ${escapeHtml(msg.fileName)} (Demo)', '📄')"><span style="font-size:20px;">📄</span><div><div style="font-size:12.5px; font-weight:700;">${escapeHtml(msg.fileName)}</div><div style="font-size:10px; opacity:0.8;">แตะเพื่อดูไฟล์ (Mock)</div></div></div>`;
+                } else if (msg.messageType === 'voice') {
+                    bubbleClass += ' voice-bubble';
+                    const isPlaying = playingVoiceId === msgId && !demoAudio.paused;
+                    bodyHtml = `<div class="chat-voice-single-row">
+                        <button type="button" class="chat-voice-play-btn" onclick="togglePlayVoice('${msgId}', '${msg.audioUrl}')">${isPlaying ? '⏸️' : '▶️'}</button>
+                        <div class="chat-voice-progress-track"><div class="chat-voice-progress-bar" style="width:${isPlaying ? '65%' : '0%'};"></div></div>
+                        <span class="chat-voice-time-text">0:0${Math.round(msg.duration || 4)}</span>
+                        <span class="chat-voice-expire-tag">⏱️8ชม.</span>
+                    </div>`;
+                } else if (isBot) {
+                    bubbleClass += ' bot-bubble';
+                    const btn = msg.actionUrl ? `<div style="margin-top:8px; border-top:1px dashed rgba(99,102,241,0.25); padding-top:8px;"><button type="button" onclick="showToast('จำลองการเปิดลิงก์ระบบย่อย: ${escapeHtml(msg.actionUrl)}', '🔗')" style="padding:6px 12px; background:#4f46e5; color:#fff; border:none; border-radius:8px; font-size:12px; cursor:pointer;">${escapeHtml(msg.actionText || 'เปิดดูข้อมูล 🔗')}</button></div>` : '';
+                    bodyHtml = `${quoteHtml}<div>${escapeHtml(msg.text)}</div>${btn}`;
+                } else {
+                    bodyHtml = `${quoteHtml}${escapeHtml(msg.text)}`;
+                }
+
+                const previewText = (msg.messageType === 'image' ? '🖼️ รูปภาพ' : msg.messageType === 'voice' ? '🎙️ ข้อความเสียง' : msg.messageType === 'file' ? '📄 ' + msg.fileName : msg.text || '').replace(/'/g, '');
+                const replyBtn = `<button type="button" class="msg-action-icon-btn" onclick="setReplyMessage('${msgId}', '${escapeHtml(msg.senderNickname)}', '${escapeHtml(previewText.slice(0,40))}')" title="ตอบกลับ">↩️</button>`;
+                const delBtn = isMine ? `<button type="button" class="msg-action-icon-btn" onclick="unsendMessage('${msgId}')" title="ยกเลิกส่ง">🗑️</button>` : '';
+
+                if (isMine) {
+                    html += `
+                        <div class="msg-wrapper mine">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div class="msg-actions-bar">${replyBtn}${delBtn}</div>
+                                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+                                    <div class="${bubbleClass}">${bodyHtml}</div>
+                                    <div class="msg-time">${currentRoom.type === 'dm' ? '<span class="msg-read-status">อ่านแล้ว</span>' : ''}${lockIcon}${timeStr}</div>
+                                </div>
+                            </div>
+                        </div>`;
+                } else {
+                    const senderUser = demoState.users[msg.senderUsername];
+                    const avatar = isBot ? '🤖' : (senderUser ? (senderUser.icon || '👤') : '👤');
+                    const botBadge = isBot ? '<span style="font-size:10px; background:#e0e7ff; color:#4338ca; padding:1px 6px; border-radius:999px; font-weight:700; margin-left:5px;">BOT</span>' : '';
+                    html += `
+                        <div class="msg-wrapper theirs">
+                            <div class="avatar-circle" style="width:32px; height:32px; font-size:16px; margin-right:0; background:${isBot ? '#6366f1' : '#cbd5e1'}; cursor:pointer;" onclick="${isBot ? '' : `showUserProfile('${msg.senderUsername}')`}">${avatar}</div>
+                            <div style="display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
+                                <div class="msg-sender-name">${escapeHtml(msg.senderNickname)}${botBadge}</div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <div class="${bubbleClass}">${bodyHtml}</div>
+                                    <div class="msg-actions-bar">${replyBtn}</div>
+                                </div>
+                                <div class="msg-time">${lockIcon}${timeStr}</div>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            area.innerHTML = html || '<div style="text-align:center; color:#94a3b8; margin-top:40px;">ยังไม่มีข้อความในห้องนี้</div>';
+        }
+
+        function scrollToBottom() {
+            const area = document.getElementById('chatMessagesArea');
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function clearRoomSearch() {
+            document.getElementById('roomMessageSearchInput').value = '';
+            renderChatMessages();
+        }
+
+        function setReplyMessage(id, senderNickname, text) {
+            currentReply = { id, senderNickname, text };
+            document.getElementById('replyPreviewSender').innerText = `↩️ ตอบกลับ คุณ${senderNickname}`;
+            document.getElementById('replyPreviewText').innerText = text;
+            document.getElementById('replyPreviewBar').classList.add('active');
+            document.getElementById('chatMessageInput').focus();
+        }
+        function cancelReplyMessage() {
+            currentReply = null;
+            document.getElementById('replyPreviewBar').classList.remove('active');
+        }
+
+        function unsendMessage(msgId) {
+            if (!confirm('ยกเลิกการส่งข้อความนี้?')) return;
+            delete demoState.messages[currentRoom.id][msgId];
+            saveDemoState();
+            renderChatMessages();
+            showToast('ยกเลิกการส่งข้อความแล้ว', '🗑️');
+        }
+
+        document.getElementById('chatForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const input = document.getElementById('chatMessageInput');
+            const text = input.value.trim();
+            if (!text || !currentRoom) return;
+            pushMessageToRoom(currentRoom.id, {
+                text,
+                senderUsername: currentUser.username,
+                senderNickname: currentUser.nickname,
+                timestamp: Date.now(),
+                e2ee: true,
+                replyTo: currentReply ? { ...currentReply } : undefined
+            }, text);
+            input.value = '';
+            cancelReplyMessage();
+        });
+
+        function pushMessageToRoom(roomId, msgObj, previewText) {
+            if (!demoState.messages[roomId]) demoState.messages[roomId] = {};
+            const id = 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            demoState.messages[roomId][id] = msgObj;
+            if (demoState.userChats[currentUser.username]?.[roomId]) {
+                demoState.userChats[currentUser.username][roomId].lastMessage = previewText;
+                demoState.userChats[currentUser.username][roomId].timestamp = Date.now();
+            }
+            saveDemoState();
+            renderChatMessages();
+            renderRecentChats();
+            scrollToBottom();
+            return id;
+        }
+
+        // Stickers
+        function toggleStickerPicker() {
+            const box = document.getElementById('stickerPickerContainer');
+            if (box.style.display === 'none') {
+                const list = document.getElementById('stickerPickerList');
+                list.innerHTML = Object.values(demoState.stickers).map(s => `
+                    <button type="button" class="sticker-item" onclick="sendSticker('${s.url}', '${escapeHtml(s.name)}')">
+                        <img src="${s.url}" alt="${escapeHtml(s.name)}">
+                    </button>
+                `).join('');
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        }
+        function sendSticker(url, name) {
+            document.getElementById('stickerPickerContainer').style.display = 'none';
+            pushMessageToRoom(currentRoom.id, {
+                text: `[สติกเกอร์] ${name}`,
+                messageType: 'sticker',
+                stickerUrl: url,
+                senderUsername: currentUser.username,
+                senderNickname: currentUser.nickname,
+                timestamp: Date.now(),
+                e2ee: true
+            }, `[สติกเกอร์] ${name}`);
+        }
+
+        // File upload mock
+        function handleMockFileSelect(input) {
+            const files = Array.from(input.files || []);
+            files.forEach(file => {
+                const isImg = file.type.startsWith('image/');
+                if (isImg) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        pushMessageToRoom(currentRoom.id, {
+                            text: `[รูปภาพ] ${file.name}`,
+                            messageType: 'image',
+                            fileName: file.name,
+                            fileUrl: ev.target.result,
+                            senderUsername: currentUser.username,
+                            senderNickname: currentUser.nickname,
+                            timestamp: Date.now(),
+                            e2ee: true
+                        }, `[รูปภาพ] ${file.name}`);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    pushMessageToRoom(currentRoom.id, {
+                        text: `[ไฟล์] ${file.name}`,
+                        messageType: 'file',
+                        fileName: file.name,
+                        fileSize: file.size,
+                        senderUsername: currentUser.username,
+                        senderNickname: currentUser.nickname,
+                        timestamp: Date.now(),
+                        e2ee: true
+                    }, `[ไฟล์] ${file.name}`);
+                }
+                showToast(`จำลองการส่งไฟล์ ${file.name} สำเร็จ!`, '📤');
+            });
+            input.value = '';
+        }
+
+        // Drag & drop
+        const chatScreenEl = document.getElementById('chatRoomScreen');
+        chatScreenEl.addEventListener('dragover', e => { e.preventDefault(); document.getElementById('dragDropOverlay').style.display = 'flex'; });
+        chatScreenEl.addEventListener('dragleave', e => { if (e.target === chatScreenEl) document.getElementById('dragDropOverlay').style.display = 'none'; });
+        chatScreenEl.addEventListener('drop', e => {
+            e.preventDefault();
+            document.getElementById('dragDropOverlay').style.display = 'none';
+            if (e.dataTransfer.files?.length) handleMockFileSelect({ files: e.dataTransfer.files, value: '' });
+        });
+
+        // Voice Playback & Mock Recorder
+        demoAudio.addEventListener('ended', () => { playingVoiceId = null; renderChatMessages(); renderVoiceList(); });
+        function togglePlayVoice(id, url) {
+            if (playingVoiceId === id && !demoAudio.paused) {
+                demoAudio.pause();
+                playingVoiceId = null;
+            } else {
+                demoAudio.src = url;
+                demoAudio.playbackRate = playbackSpeed;
+                demoAudio.play().catch(() => {});
+                playingVoiceId = id;
+            }
+            renderChatMessages();
+            renderVoiceList();
+        }
+        function startMockVoiceRec() {
+            mockRecSec = 0;
+            document.getElementById('voiceRecordingBar').style.display = 'flex';
+            document.getElementById('voiceRecTimerText').innerText = '0:00 / 0:15';
+            mockRecTimer = setInterval(() => {
+                mockRecSec++;
+                document.getElementById('voiceRecTimerText').innerText = `0:${String(mockRecSec).padStart(2,'0')} / 0:15`;
+                if (mockRecSec >= 15) finishMockVoiceRec();
+            }, 1000);
+        }
+        function cancelMockVoiceRec() {
+            clearInterval(mockRecTimer);
+            document.getElementById('voiceRecordingBar').style.display = 'none';
+        }
+        function finishMockVoiceRec() {
+            clearInterval(mockRecTimer);
+            document.getElementById('voiceRecordingBar').style.display = 'none';
+            const dur = Math.max(2, mockRecSec);
+            const audioUrl = window.SEVANA_DEMO_DATA.makeMockWavDataUrl(587.33, Math.min(5, dur));
+            const id = pushMessageToRoom(currentRoom.id, {
+                text: 'ส่งข้อความเสียงจำลอง',
+                messageType: 'voice',
+                type: 'voice',
+                audioUrl,
+                duration: dur,
+                senderUsername: currentUser.username,
+                senderNickname: currentUser.nickname,
+                timestamp: Date.now()
+            }, `🎙️ [ข้อความเสียง ${dur} วิ]`);
+            if (!demoState.voiceMessages[currentRoom.id]) demoState.voiceMessages[currentRoom.id] = {};
+            demoState.voiceMessages[currentRoom.id][id] = {
+                id, audioUrl, duration: dur, senderUsername: currentUser.username, senderNickname: currentUser.nickname,
+                timestamp: Date.now(), expiresAt: Date.now() + 8 * 3600 * 1000
+            };
+            saveDemoState();
+            showToast('ส่งข้อความเสียงจำลองสำเร็จ!', '🎙️');
+        }
+        function openVoiceNotesModal() {
+            document.getElementById('voiceNotesModal').style.display = 'flex';
+            renderVoiceList();
+        }
+        function closeVoiceNotesModal() { document.getElementById('voiceNotesModal').style.display = 'none'; }
+        function renderVoiceList() {
+            const list = document.getElementById('voiceNotesList');
+            if (!currentRoom || !list) return;
+            const voices = Object.values(demoState.voiceMessages[currentRoom.id] || {}).sort((a, b) => b.timestamp - a.timestamp);
+            if (voices.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:30px;">ยังไม่มีข้อความเสียงในห้องนี้</div>';
+                return;
+            }
+            list.innerHTML = voices.map(v => {
+                const isPlaying = playingVoiceId === v.id && !demoAudio.paused;
+                return `
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:12px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <b style="font-size:13px;">${escapeHtml(v.senderNickname)}</b>
+                            <span style="font-size:11px; color:#059669;">⏱️ หมดอายุใน 8 ชม.</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button type="button" onclick="togglePlayVoice('${v.id}', '${v.audioUrl}')" style="width:36px; height:36px; border-radius:50%; border:none; background:#10b981; color:#fff; cursor:pointer;">${isPlaying ? '⏸️' : '▶️'}</button>
+                            <div style="flex:1; font-size:12px; color:#64748b;">ความยาว ${Math.round(v.duration)} วินาที</div>
+                            <button type="button" onclick="playbackSpeed = playbackSpeed === 1 ? 1.5 : playbackSpeed === 1.5 ? 2 : 1; demoAudio.playbackRate = playbackSpeed; renderVoiceList();" style="border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px; padding:4px 8px; font-size:11px; cursor:pointer;">${playbackSpeed}x</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        function sendInstantDemoVoiceFromModal() {
+            mockRecSec = 4;
+            finishMockVoiceRec();
+            renderVoiceList();
+        }
+
+        // Shared Files Gallery
+        function showSharedFiles() {
+            const msgs = Object.values(demoState.messages[currentRoom.id] || {});
+            const imgs = msgs.filter(m => m.messageType === 'image');
+            const files = msgs.filter(m => m.messageType === 'file');
+            openModal('คลังไฟล์และรูปภาพ', `
+                <div class="media-tabs">
+                    <button class="media-tab-btn active" id="tabBtnImg" onclick="document.getElementById('tabImg').style.display='block';document.getElementById('tabFile').style.display='none';this.classList.add('active');document.getElementById('tabBtnFile').classList.remove('active');">รูปภาพ (${imgs.length})</button>
+                    <button class="media-tab-btn" id="tabBtnFile" onclick="document.getElementById('tabFile').style.display='block';document.getElementById('tabImg').style.display='none';this.classList.add('active');document.getElementById('tabBtnImg').classList.remove('active');">ไฟล์เอกสาร (${files.length})</button>
+                </div>
+                <div id="tabImg">
+                    ${imgs.length ? `<div class="media-gallery-grid">${imgs.map(i => `<div class="media-image-item" onclick="openImageLightbox('${i.fileUrl}','${escapeHtml(i.fileName)}')"><img src="${i.fileUrl}"></div>`).join('')}</div>` : '<div style="text-align:center;color:#94a3b8;padding:30px;">ไม่มีรูปภาพ</div>'}
+                </div>
+                <div id="tabFile" style="display:none;">
+                    ${files.length ? files.map(f => `<div class="list-card" style="box-shadow:none;border:1px solid #e2e8f0;" onclick="showToast('เปิดไฟล์ตัวอย่าง: ${escapeHtml(f.fileName)}','📄')"><span style="font-size:22px;margin-right:10px;">📄</span><div><div style="font-weight:600;font-size:13px;">${escapeHtml(f.fileName)}</div><div style="font-size:11px;color:#64748b;">โดย ${escapeHtml(f.senderNickname)}</div></div></div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:30px;">ไม่มีไฟล์เอกสาร</div>'}
+                </div>
+            `);
+        }
+
+        // User & Room Info
+        function showUserProfile(username) {
+            const u = demoState.users[username];
+            if (!u) return;
+            openModal('ข้อมูลผู้ใช้งาน (Demo)', `
+                <div style="text-align:center;">
+                    <div class="avatar-circle" style="width:80px;height:80px;font-size:38px;margin:0 auto 10px auto;background:var(--primary-color);">${u.icon || '👤'}</div>
+                    <h3 style="margin:0;">${escapeHtml(u.fullname)}</h3>
+                    <p style="color:#64748b;margin:4px 0 12px 0;">${escapeHtml(u.department)} | ${escapeHtml(u.position || '-')}</p>
+                    <div style="background:#f8fafc;padding:12px;border-radius:10px;text-align:left;font-size:13.5px;line-height:1.8;margin-bottom:12px;">
+                        ☎️ มือถือ (จำลอง): <b>${escapeHtml(u.mobile || '-')}</b><br>
+                        📞 เบอร์แผนก (จำลอง): <b>${escapeHtml(u.office_phone || '-')}</b><br>
+                        💬 LINE ID (จำลอง): <b>${escapeHtml(u.lineid || '-')}</b>
+                    </div>
+                    ${username !== currentUser.username ? `<button class="btn-primary" onclick="closeModal(); openDirectMessage('${u.username}')">💬 แชทส่วนตัว (ในแอป)</button>` : ''}
+                </div>
+            `);
+        }
+
+        function showRoomInfo() {
+            if (currentRoom.type === 'dm') return showUserProfile(currentRoom.targetUsername);
+            const room = demoState.rooms[currentRoom.id];
+            if (!room) return;
+            const membersHtml = Object.keys(room.members || {}).map(m => {
+                const u = demoState.users[m];
+                return u ? `<li style="padding:8px 0; border-bottom:1px solid #f1f5f9; cursor:pointer;" onclick="showUserProfile('${u.username}')">${u.icon || '👤'} <b>${escapeHtml(u.nickname)}</b> <span style="font-size:12px;color:#64748b;">(${escapeHtml(u.department)})</span></li>` : '';
+            }).join('');
+            openModal('ข้อมูลกลุ่ม', `
+                <div style="text-align:center;">
+                    <div style="font-size:12px;color:#64748b;">รหัสเชิญเข้ากลุ่ม 6 หลัก</div>
+                    <div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:var(--primary-color);">${room.code}</div>
+                    <div style="margin-top:10px;padding:10px;background:#f8fafc;border-radius:10px;border:1px dashed #cbd5e1;font-size:12px;">
+                        Room ID สำหรับ Bot/Webhook: <code style="color:#4338ca;font-weight:bold;">${currentRoom.id}</code>
+                    </div>
+                </div>
+                <p style="font-weight:700;margin:14px 0 6px 0;">สมาชิกกลุ่ม:</p>
+                <ul style="list-style:none;padding:0;margin:0;">${membersHtml}</ul>
+            `);
+        }
+
+        // Create / Join Group
+        function openGroupModal() {
+            openModal('สร้างหรือเข้าร่วมกลุ่ม', `
+                <button class="btn-primary" onclick="createMockGroup()">+ สร้างกลุ่มใหม่ (จำลอง)</button>
+                <p style="text-align:center;color:#94a3b8;margin:14px 0;">--- หรือ ---</p>
+                <input type="text" id="joinCodeInput" placeholder="กรอกรหัส 6 หลัก (เช่น 210101)" style="text-align:center;font-weight:bold;">
+                <button class="btn-secondary" onclick="joinMockGroup()">เข้าร่วมกลุ่ม</button>
+            `);
+        }
+        function createMockGroup() {
+            const name = prompt('ตั้งชื่อกลุ่มใหม่ (Demo):');
+            if (!name) return;
+            const code = String(Math.floor(100000 + Math.random() * 900000));
+            const roomId = 'Group_' + code;
+            demoState.rooms[roomId] = { name, code, icon: '💬', members: { [currentUser.username]: true } };
+            demoState.userChats[currentUser.username][roomId] = { roomId, type: 'group', roomName: name, lastMessage: 'สร้างกลุ่มใหม่แล้ว', timestamp: Date.now(), unread: false, pinned: false, muted: false, hidden: false };
+            demoState.messages[roomId] = {};
+            saveDemoState();
+            closeModal();
+            renderMembersDirectory();
+            openChatRoom(roomId, 'group');
+            showToast(`สร้างกลุ่มสำเร็จ รหัสเชิญ: ${code}`, '🎉');
+        }
+        function joinMockGroup() {
+            const code = document.getElementById('joinCodeInput').value.trim();
+            const found = Object.entries(demoState.rooms).find(([, r]) => r.code === code);
+            if (!found) return alert('ไม่พบกลุ่มรหัสนี้ (ลอง 210101, 210202 หรือ 210303)');
+            const [roomId, room] = found;
+            room.members[currentUser.username] = true;
+            demoState.userChats[currentUser.username][roomId] = { roomId, type: 'group', roomName: room.name, lastMessage: 'เข้าร่วมกลุ่มแล้ว', timestamp: Date.now(), unread: false, pinned: false, muted: false, hidden: false };
+            saveDemoState();
+            closeModal();
+            renderMembersDirectory();
+            openChatRoom(roomId, 'group');
+        }
+
+        // Edit Profile & Change PIN
+        function openEditProfileModal() {
+            openModal('แก้ไขข้อมูลส่วนตัว (Demo)', `
+                <form onsubmit="saveMockProfile(event)">
+                    <div class="form-group"><label>ชื่อเล่น</label><input id="epNick" type="text" value="${escapeHtml(currentUser.nickname)}" required></div>
+                    <div class="form-group"><label>แผนก</label><select id="epDept">${window.SEVANA_DEMO_DATA.DEPARTMENTS.map(d => `<option value="${d}" ${d === currentUser.department ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
+                    <div class="form-group"><label>ตำแหน่ง</label><input id="epPos" type="text" value="${escapeHtml(currentUser.position || '')}"></div>
+                    <div class="form-group"><label>สถานะ</label><select id="epStat">
+                        ${['ออนไลน์','ออฟไลน์','ลาหยุด','ออกนอกศูนย์'].map(s => `<option value="${s}" ${s === currentUser.status ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select></div>
+                    <button type="submit" class="btn-primary">บันทึกข้อมูล (Demo)</button>
+                </form>
+            `);
+        }
+        function saveMockProfile(e) {
+            e.preventDefault();
+            currentUser.nickname = document.getElementById('epNick').value.trim();
+            currentUser.department = document.getElementById('epDept').value;
+            currentUser.position = document.getElementById('epPos').value.trim();
+            currentUser.status = document.getElementById('epStat').value;
+            demoState.users[currentUser.username] = currentUser;
+            saveDemoState();
+            closeModal();
+            renderAllAppViews();
+            showToast('อัปเดตโปรไฟล์จำลองสำเร็จ!', '✅');
+        }
+        function openChangePasswordModal() {
+            openModal('เปลี่ยนรหัสผ่าน PIN (Demo)', `
+                <form onsubmit="event.preventDefault(); const p=document.getElementById('newPinDemo').value; if(!/^[0-9]{6}$/.test(p)) return alert('ต้องเป็นตัวเลข 6 หลัก'); currentUser.pin=p; demoState.users[currentUser.username].pin=p; saveDemoState(); closeModal(); showToast('เปลี่ยน PIN จำลองเรียบร้อย!','🔒');">
+                    <div class="form-group"><label>รหัสผ่านใหม่ (PIN 6 หลัก)</label><input id="newPinDemo" type="password" maxlength="6" placeholder="123456" required></div>
+                    <button type="submit" class="btn-primary">บันทึก PIN ใหม่</button>
+                </form>
+            `);
+        }
+
+        // Bot & Webhook Sandbox (Zero Real Secrets)
+        function openBotWebhookManager() {
+            const cfg = window.SEVANA_DEMO_DATA.MOCK_CONFIG;
+            const rooms = Object.entries(demoState.rooms);
+            openModal('🤖 ศูนย์รวม Bot & Webhook (Sandbox)', `
+                <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:12px; padding:12px; margin-bottom:14px; font-size:12px;">
+                    <div style="font-weight:700; color:#3730a3; margin-bottom:6px;">Webhook Endpoint (Placeholder)</div>
+                    <code style="display:block; background:#fff; padding:6px; border-radius:6px; word-break:break-all;">${cfg.BOT_WEBHOOK_ENDPOINT}</code>
+                    <div style="margin-top:6px; color:#4338ca;">🔑 Demo Key: <code>${cfg.BOT_API_KEY_DEMO}</code> (ไม่ใช้ Key จริง)</div>
+                </div>
+                <div class="form-group">
+                    <label>เลือกห้องปลายทาง</label>
+                    <select id="botRoomSelect">${rooms.map(([id, r]) => `<option value="${id}">${escapeHtml(r.name)} (${id})</option>`).join('')}</select>
+                </div>
+                <div class="form-group">
+                    <label>ข้อความทดสอบจาก Bot</label>
+                    <input id="botMsgInput" type="text" value="🔔 แจ้งเตือนทดสอบจากระบบย่อย (Demo Sandbox)">
+                </div>
+                <button type="button" class="btn-primary" style="background:#4f46e5;" onclick="sendSimulatedBotMessage()">🚀 ยิงข้อความบอทจำลองเข้าห้องแชท</button>
+            `);
+        }
+        function sendSimulatedBotMessage() {
+            const roomId = document.getElementById('botRoomSelect').value;
+            const text = document.getElementById('botMsgInput').value.trim();
+            if (!text) return;
+            if (!demoState.messages[roomId]) demoState.messages[roomId] = {};
+            const id = 'bot_' + Date.now();
+            demoState.messages[roomId][id] = {
+                text,
+                senderUsername: 'bot_sandbox',
+                senderNickname: '🤖 Sevana Sandbox Bot',
+                timestamp: Date.now(),
+                messageType: 'bot',
+                isBot: true,
+                actionUrl: 'https://demo-sandbox.local/report',
+                actionText: 'เปิดดูรายงาน (Demo) 🔗'
+            };
+            if (demoState.userChats[currentUser.username]?.[roomId]) {
+                demoState.userChats[currentUser.username][roomId].lastMessage = `🤖 Sevana Sandbox Bot: ${text}`;
+                demoState.userChats[currentUser.username][roomId].timestamp = Date.now();
+                demoState.userChats[currentUser.username][roomId].unread = true;
+            }
+            saveDemoState();
+            closeModal();
+            renderRecentChats();
+            openChatRoom(roomId, 'group');
+            showToast('ส่งข้อความ Bot จำลองเข้าห้องแชทแล้ว!', '🤖');
+        }
+
+        function openStickerManager() {
+            openModal('⭐ จัดการสติกเกอร์ (Mock)', `
+                <p style="font-size:12.5px;color:#475569;margin-top:0;">แสดงคลังสติกเกอร์จำลอง (SVG Inline ไม่มีไฟล์ภายนอก)</p>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+                    ${Object.values(demoState.stickers).map(s => `
+                        <div style="text-align:center; background:#f8fafc; padding:8px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <img src="${s.url}" style="width:52px;height:52px;">
+                            <div style="font-size:11px;color:#475569;margin-top:4px;">${escapeHtml(s.name)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `);
+        }
+    </script>
+</body>
+</html>

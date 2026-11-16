@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ระบบบริการสาธารณสุข 21 วัดธาตุทอง — New UI Bento Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-title: 'Mitr', sans-serif;
+      --font-body: 'Sarabun', sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; font-family: var(--font-body); min-height: 100vh; overflow-x: hidden;
+    }
+    body {
+      --nui-bg: #f4f7fb;
+      --nui-surface: rgba(255, 255, 255, 0.88);
+      --nui-surface-elevated: #ffffff;
+      --nui-border: rgba(15, 23, 42, 0.08);
+      --nui-border-strong: rgba(16, 185, 129, 0.35);
+      --nui-text: #0f172a;
+      --nui-text-secondary: #475569;
+      --nui-text-muted: #64748b;
+      --nui-accent: #059669;
+      --nui-accent-2: #0284c7;
+      --nui-card-shadow: 0 14px 36px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      --nui-dock-bg: rgba(255, 255, 255, 0.9);
+      --nui-pill-bg: rgba(15, 23, 42, 0.05);
+      --nui-input-bg: rgba(255, 255, 255, 0.96);
+      --nui-row-bg: rgba(255, 255, 255, 0.94);
+      background-color: var(--nui-bg);
+      color: var(--nui-text);
+      transition: background-color 0.35s ease, color 0.35s ease;
+    }
+    body[data-theme="dark"] {
+      --nui-bg: #050811;
+      --nui-surface: rgba(15, 23, 42, 0.72);
+      --nui-surface-elevated: rgba(30, 41, 59, 0.88);
+      --nui-border: rgba(255, 255, 255, 0.1);
+      --nui-border-strong: rgba(52, 211, 153, 0.35);
+      --nui-text: #f8fafc;
+      --nui-text-secondary: #94a3b8;
+      --nui-text-muted: #64748b;
+      --nui-accent: #10b981;
+      --nui-accent-2: #06b6d4;
+      --nui-card-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      --nui-dock-bg: rgba(10, 15, 29, 0.84);
+      --nui-pill-bg: rgba(255, 255, 255, 0.07);
+      --nui-input-bg: rgba(15, 23, 42, 0.85);
+      --nui-row-bg: rgba(30, 41, 59, 0.6);
+    }
+
+    .demo-ribbon {
+      background: linear-gradient(90deg, #064e3b, #0f172a);
+      color: #d1fae5;
+      font-size: 0.78rem;
+      padding: 6px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .nui-aurora-canvas {
+      position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--nui-bg);
+    }
+    .nui-aurora-blob {
+      position: absolute; border-radius: 50%; filter: blur(95px); opacity: 0.24;
+    }
+    .blob-1 { width: 420px; height: 420px; background: #10b981; top: -100px; left: -100px; }
+    .blob-2 { width: 380px; height: 380px; background: #0284c7; bottom: -120px; right: -80px; }
+
+    #new-ui-root { min-height: 100vh; padding-bottom: 115px; }
+
+    .nui-topbar {
+      position: sticky; top: 10px; z-index: 50; max-width: 1280px; margin: 12px auto 0; padding: 0 16px;
+    }
+    .nui-topbar-inner {
+      background: var(--nui-surface); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--nui-border); border-radius: 20px; padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      box-shadow: var(--nui-card-shadow);
+    }
+    .nui-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .nui-brand-logo { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; }
+    .nui-brand-text h1 { margin: 0; font-family: var(--font-title); font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+    .nui-brand-text p { margin: 0; font-size: 0.72rem; color: var(--nui-text-secondary); }
+    .nui-beta-chip {
+      font-size: 0.65rem; background: rgba(16, 185, 129, 0.14); color: var(--nui-accent);
+      padding: 2px 8px; border-radius: 999px; border: 1px solid var(--nui-border-strong);
+    }
+
+    .nui-spotlight-trigger {
+      flex: 1; max-width: 380px; min-width: 210px;
+      background: var(--nui-pill-bg); border: 1px solid var(--nui-border); color: var(--nui-text-secondary);
+      border-radius: 12px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; font-family: var(--font-body); font-size: 0.85rem;
+    }
+    .nui-kbd {
+      font-size: 0.72rem; padding: 2px 7px; border-radius: 6px;
+      background: var(--nui-surface-elevated); border: 1px solid var(--nui-border); font-weight: 600;
+    }
+    .nui-top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .nui-action-btn {
+      background: var(--nui-surface-elevated); border: 1px solid var(--nui-border); color: var(--nui-text);
+      padding: 7px 12px; border-radius: 12px; font-family: var(--font-title); font-size: 0.8rem;
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .nui-action-btn:hover { border-color: var(--nui-border-strong); }
+
+    .nui-container { max-width: 1280px; margin: 20px auto 0; padding: 0 16px; }
+    .nui-view { display: none; animation: fadeIn 0.25s ease; }
+    .nui-view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .nui-bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+    .bento-span-8 { grid-column: span 8; }
+    .bento-span-4 { grid-column: span 4; }
+    .bento-span-7 { grid-column: span 7; }
+    .bento-span-5 { grid-column: span 5; }
+    @media (max-width: 960px) {
+      .bento-span-8, .bento-span-4, .bento-span-7, .bento-span-5 { grid-column: span 12; }
+    }
+
+    .nui-bento-card {
+      background: var(--nui-surface); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--nui-border); border-radius: 22px; padding: 20px; box-shadow: var(--nui-card-shadow);
+    }
+    .nui-hero-card { position: relative; min-height: 210px; overflow: hidden; padding: 0; }
+    .nui-hero-slides { position: absolute; inset: 0; }
+    .nui-hero-slides img { width: 100%; height: 100%; object-fit: cover; }
+    .nui-hero-overlay {
+      position: relative; z-index: 2; height: 100%; min-height: 210px; padding: 24px;
+      background: linear-gradient(90deg, rgba(6, 78, 59, 0.88), rgba(15, 23, 42, 0.45));
+      color: #fff; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;
+    }
+    .nui-user-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.16); padding: 4px 12px 4px 4px; border-radius: 999px; margin-bottom: 10px;
+    }
+    .nui-user-avatar {
+      width: 26px; height: 26px; border-radius: 50%; background: #10b981;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;
+    }
+    .nui-hero-title { margin: 0; font-family: var(--font-title); font-size: 1.4rem; }
+    .nui-hero-sub { margin: 4px 0 0; font-size: 0.86rem; opacity: 0.9; }
+
+    .nui-clock-card { display: flex; flex-direction: column; justify-content: space-between; }
+    .nui-live-badge {
+      font-size: 0.72rem; padding: 3px 10px; border-radius: 999px;
+      background: rgba(16, 185, 129, 0.12); color: var(--nui-accent); border: 1px solid var(--nui-border-strong);
+      display: inline-flex; align-items: center; gap: 6px; font-weight: 600;
+    }
+    .nui-pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+    .nui-digital-clock { font-family: var(--font-title); font-size: 2.1rem; font-weight: 600; margin-top: 10px; }
+    .nui-date-text { font-size: 0.84rem; color: var(--nui-text-secondary); }
+    .nui-mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+    .nui-stat-box {
+      background: var(--nui-pill-bg); border-radius: 14px; padding: 10px; text-align: center;
+    }
+    .nui-stat-num { font-family: var(--font-title); font-size: 1.25rem; color: var(--nui-accent); }
+    .nui-stat-label { font-size: 0.74rem; color: var(--nui-text-secondary); }
+
+    .nui-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .nui-card-title { margin: 0; font-family: var(--font-title); font-size: 1.08rem; }
+    .nui-card-sub { margin: 3px 0 0; font-size: 0.82rem; color: var(--nui-text-secondary); }
+    .nui-tab-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .nui-tab-pill {
+      background: var(--nui-pill-bg); border: 1px solid transparent; color: var(--nui-text-secondary);
+      padding: 6px 12px; border-radius: 999px; font-family: var(--font-title); font-size: 0.78rem; cursor: pointer;
+    }
+    .nui-tab-pill.active { background: var(--nui-accent); color: #fff; }
+
+    .nui-launchpad-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (max-width: 640px) { .nui-launchpad-grid { grid-template-columns: 1fr; } }
+    .nui-pin-item {
+      background: var(--nui-row-bg); border: 1px solid var(--nui-border); border-radius: 14px;
+      padding: 11px 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer;
+    }
+    .nui-pin-item:hover { border-color: var(--nui-border-strong); }
+    .nui-pin-title { font-family: var(--font-title); font-size: 0.88rem; }
+    .nui-pin-cat { font-size: 0.74rem; color: var(--nui-text-secondary); }
+
+    .nui-quick-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .nui-quick-tile {
+      background: var(--nui-row-bg); border: 1px solid var(--nui-border); border-radius: 16px;
+      padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+    .nui-quick-tile:hover { border-color: var(--nui-border-strong); }
+    .nui-quick-tile-icon {
+      width: 42px; height: 42px; border-radius: 12px; background: rgba(16, 185, 129, 0.14);
+      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    }
+    .nui-quick-tile-title { font-family: var(--font-title); font-size: 0.9rem; }
+    .nui-quick-tile-sub { font-size: 0.76rem; color: var(--nui-text-secondary); }
+
+    /* Magic Hub */
+    .nui-magic-toolbar { display: flex; gap: 10px; margin-bottom: 14px; }
+    .nui-search-wrap { flex: 1; position: relative; }
+    .nui-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
+    .nui-search-input {
+      width: 100%; padding: 12px 14px 12px 42px; border-radius: 14px;
+      border: 1px solid var(--nui-border); background: var(--nui-input-bg); color: var(--nui-text); font-size: 0.92rem;
+    }
+    .nui-category-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .nui-cat-pill {
+      padding: 8px 14px; border-radius: 999px; border: 1px solid var(--nui-border);
+      background: var(--nui-surface); color: var(--nui-text); cursor: pointer; font-family: var(--font-title); font-size: 0.84rem;
+    }
+    .nui-cat-pill.active { background: var(--nui-accent); color: #fff; border-color: var(--nui-accent); }
+    .nui-magic-rows-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    @media (max-width: 780px) { .nui-magic-rows-grid { grid-template-columns: 1fr; } }
+    .nui-magic-row {
+      background: var(--nui-row-bg); border: 1px solid var(--nui-border); border-radius: 16px;
+      padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .nui-magic-row:hover { border-color: var(--nui-border-strong); }
+    .nui-row-tools { display: flex; gap: 6px; }
+    .nui-icon-btn {
+      background: var(--nui-pill-bg); border: 1px solid var(--nui-border); border-radius: 10px;
+      padding: 6px 9px; cursor: pointer; color: var(--nui-text); font-size: 0.82rem;
+    }
+    .nui-icon-btn.pinned { background: rgba(245, 158, 11, 0.2); border-color: #f59e0b; }
+
+    /* Calendar Split */
+    .nui-cal-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .nui-cal-workspace.mode-calendar { grid-template-columns: 1fr; }
+    .nui-cal-workspace.mode-calendar .nui-cal-pane-form { display: none; }
+    .nui-cal-workspace.mode-form { grid-template-columns: 1fr; }
+    .nui-cal-workspace.mode-form .nui-cal-pane-cal { display: none; }
+    @media (max-width: 860px) { .nui-cal-workspace { grid-template-columns: 1fr; } }
+
+    .nui-form-field { margin-bottom: 10px; }
+    .nui-form-field label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 4px; }
+    .nui-form-field input, .nui-form-field select {
+      width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--nui-border);
+      background: var(--nui-input-bg); color: var(--nui-text); font-family: var(--font-body);
+    }
+
+    /* Edu */
+    .nui-edu-list { display: flex; flex-direction: column; gap: 14px; }
+    .nui-edu-card {
+      border-radius: 18px; padding: 20px 24px; color: #fff;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer;
+    }
+
+    /* Chat & Line Mock */
+    .nui-chat-box {
+      height: 320px; overflow-y: auto; padding: 14px; border-radius: 14px;
+      background: var(--nui-pill-bg); border: 1px solid var(--nui-border); display: flex; flex-direction: column; gap: 10px;
+    }
+    .nui-chat-msg {
+      max-width: 78%; padding: 10px 14px; border-radius: 14px; background: var(--nui-surface-elevated);
+      border: 1px solid var(--nui-border); font-size: 0.88rem;
+    }
+    .nui-chat-msg.self {
+      align-self: flex-end; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none;
+    }
+
+    /* Floating Dock */
+    .nui-floating-dock-wrap {
+      position: fixed; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; z-index: 60; pointer-events: none; padding: 0 12px;
+    }
+    .nui-floating-dock {
+      pointer-events: auto; background: var(--nui-dock-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--nui-border); border-radius: 999px; padding: 6px 10px;
+      display: flex; align-items: center; gap: 4px; box-shadow: 0 18px 40px rgba(0,0,0,0.18); overflow-x: auto; max-width: 100%;
+    }
+    .nui-dock-item {
+      border: none; background: transparent; color: var(--nui-text-secondary);
+      padding: 8px 13px; border-radius: 999px; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-title); font-size: 0.8rem; white-space: nowrap;
+    }
+    .nui-dock-item.active { background: var(--nui-accent); color: #fff; }
+    .nui-dock-divider { width: 1px; height: 22px; background: var(--nui-border); margin: 0 4px; }
+    @media (max-width: 680px) { .dock-label { display: none; } }
+
+    /* Modals */
+    .nui-modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(8px);
+      z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .nui-spotlight-box {
+      background: var(--nui-surface-elevated); border: 1px solid var(--nui-border); border-radius: 20px;
+      max-width: 620px; width: 100%; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    }
+    .nui-spotlight-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--nui-border); }
+    .nui-spotlight-input {
+      flex: 1; border: none; background: transparent; color: var(--nui-text); font-size: 1rem; outline: none;
+    }
+    .nui-spotlight-list { max-height: 340px; overflow-y: auto; padding: 8px; }
+    .nui-spot-item {
+      display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 12px; cursor: pointer;
+    }
+    .nui-spot-item.active, .nui-spot-item:hover { background: rgba(16, 185, 129, 0.12); }
+
+    .nui-qr-dialog {
+      background: #0f172a; color: #f8fafc; border-radius: 24px; padding: 24px; max-width: 390px; width: 100%; text-align: center;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .nui-qr-frame {
+      background: #fff; border-radius: 16px; padding: 12px; display: inline-block; margin: 14px 0;
+    }
+    .nui-qr-frame img { width: 185px; height: 185px; display: block; }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="demo-ribbon">
+    <div>✨ <strong>NEW UI BENTO WORKSPACE (DEMO MOCK-UP)</strong> • Pro-Health Data BKK South (Offline Sandbox — ไม่มีลิงก์/ข้อมูลจริง)</div>
+    <div><a href="index.html" style="color:#a7f3d0; text-decoration:underline;">← กลับหน้า Login / Classic UI</a></div>
+  </div>
+
+  <div id="new-ui-root">
+    <div class="nui-aurora-canvas">
+      <div class="nui-aurora-blob blob-1"></div>
+      <div class="nui-aurora-blob blob-2"></div>
+    </div>
+
+    <div class="nui-topbar">
+      <div class="nui-topbar-inner">
+        <div class="nui-brand" onclick="nuiSwitchView('home')">
+          <img id="nui-nav-logo" class="nui-brand-logo" src="" alt="Logo">
+          <div class="nui-brand-text">
+            <h1>ศบส.21 วัดธาตุทอง <span class="nui-beta-chip">NEW UI • DEMO</span></h1>
+            <p>Home Health Care Spatial Workspace</p>
+          </div>
+        </div>
+
+        <button type="button" class="nui-spotlight-trigger" onclick="openNuiSpotlight()">
+          <span>🔍 ค้นหาปุ่มวิเศษ, ระบบงาน, คำสั่งด่วน...</span>
+          <span class="nui-kbd">⌘K</span>
+        </button>
+
+        <div class="nui-top-actions">
+          <button type="button" class="nui-action-btn" id="nui-theme-btn" onclick="toggleNuiTheme()">🌙 โหมดมืด Obsidian</button>
+          <button type="button" class="nui-action-btn" onclick="reloadDemo()">🔄 รีเฟรช</button>
+          <a href="index.html" class="nui-action-btn">🏛️ ระบบเดิม</a>
+          <a href="index.html?logout=1" class="nui-action-btn" style="color:#ef4444;">ออกจากระบบ</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="nui-container">
+      <!-- 1. HOME -->
+      <div id="nui-view-home" class="nui-view active">
+        <div class="nui-bento-grid">
+          <div class="nui-bento-card nui-hero-card bento-span-8">
+            <div id="nui-banner-home" class="nui-hero-slides"></div>
+            <div class="nui-hero-overlay">
+              <div>
+                <div class="nui-user-chip">
+                  <div id="nui-user-avatar" class="nui-user-avatar">S</div>
+                  <span id="nui-user-role-badge" style="font-size:0.78rem; font-weight:600;">เจ้าหน้าที่เยี่ยมบ้าน (Demo)</span>
+                </div>
+                <h2 id="nui-user-greeting" class="nui-hero-title">สวัสดีครับ, ยินดีต้อนรับสู่ระบบเยี่ยมบ้าน</h2>
+                <p class="nui-hero-sub">✨ โทนขาวมุก Apple Pearl สบายตา • ปักหมุดงานประจำ & สร้าง QR Code หน้างาน</p>
+              </div>
+              <button type="button" class="nui-action-btn" style="background:#10b981; color:#fff; border:none;" onclick="nuiSwitchView('magic')">🔮 เปิดคลังปุ่มวิเศษ →</button>
+            </div>
+          </div>
+
+          <div class="nui-bento-card nui-clock-card bento-span-4">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="nui-live-badge"><span class="nui-pulse-dot"></span> DEMO SANDBOX</span>
+                <span style="font-size:0.75rem; color:var(--nui-text-secondary);">BKK • UTC+7</span>
+              </div>
+              <div id="nui-live-clock" class="nui-digital-clock">00:00:00</div>
+              <div id="nui-live-date" class="nui-date-text">...</div>
+            </div>
+            <div class="nui-mini-stats">
+              <div class="nui-stat-box"><div id="nui-stat-buttons" class="nui-stat-num">0</div><div class="nui-stat-label">ปุ่มวิเศษ</div></div>
+              <div class="nui-stat-box"><div id="nui-stat-pinned" class="nui-stat-num">0</div><div class="nui-stat-label">ปักหมุดไว้</div></div>
+              <div class="nui-stat-box"><div id="nui-stat-logos" class="nui-stat-num">0</div><div class="nui-stat-label">โลโก้ศูนย์</div></div>
+            </div>
+          </div>
+
+          <div class="nui-bento-card bento-span-7">
+            <div class="nui-card-head">
+              <div>
+                <h3 class="nui-card-title">⭐ แผงทางลัดส่วนตัว (Personal Launchpad)</h3>
+                <p class="nui-card-sub">กดปุ่ม ⭐ ในหน้าปุ่มวิเศษเพื่อปักหมุดระบบที่ใช้บ่อย</p>
+              </div>
+              <div class="nui-tab-pills">
+                <button type="button" id="nui-tab-pinned" class="nui-tab-pill active" onclick="switchLaunchpadTab('pinned')">⭐ ปักหมุดของฉัน</button>
+                <button type="button" id="nui-tab-recent" class="nui-tab-pill" onclick="switchLaunchpadTab('recent')">🕒 เปิดล่าสุด</button>
+              </div>
+            </div>
+            <div id="nui-launchpad-list" class="nui-launchpad-grid"></div>
+          </div>
+
+          <div class="nui-bento-card bento-span-5">
+            <div class="nui-card-head">
+              <div>
+                <h3 class="nui-card-title">⚡ คำสั่งด่วนหน้างาน (Quick Actions)</h3>
+                <p class="nui-card-sub">เครื่องมือลัดสำหรับทีมเยี่ยมบ้านและสหวิชาชีพ</p>
+              </div>
+            </div>
+            <div class="nui-quick-tiles">
+              <div class="nui-quick-tile" onclick="openNuiSpotlight()">
+                <div class="nui-quick-tile-icon">🔍</div>
+                <div><div class="nui-quick-tile-title">ค้นหาด่วน (⌘K)</div><div class="nui-quick-tile-sub">Spotlight Search</div></div>
+              </div>
+              <div class="nui-quick-tile" onclick="nuiSwitchView('calendar'); setNuiCalendarMode('form');">
+                <div class="nui-quick-tile-icon">📝</div>
+                <div><div class="nui-quick-tile-title">ลงนัดเยี่ยมบ้าน</div><div class="nui-quick-tile-sub">เปิดฟอร์มบันทึกนัด</div></div>
+              </div>
+              <div class="nui-quick-tile" onclick="nuiSwitchView('sevana')">
+                <div class="nui-quick-tile-icon">💬</div>
+                <div><div class="nui-quick-tile-title">ระบบแชต Sevana</div><div class="nui-quick-tile-sub">เปิดแชตในหน้าเว็บ</div></div>
+              </div>
+              <div class="nui-quick-tile" onclick="openNuiQrModal('ทางเข้า Demo ระบบเยี่ยมบ้าน', 'https://example.com/demo/hhc-portal', 'คำสั่งด่วนหน้างาน')">
+                <div class="nui-quick-tile-icon">📲</div>
+                <div><div class="nui-quick-tile-title">สร้าง QR หน้างาน</div><div class="nui-quick-tile-sub">SVG QR Offline Demo</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. MAGIC HUB -->
+      <div id="nui-view-magic" class="nui-view">
+        <div class="nui-bento-card" style="margin-bottom:18px;">
+          <h2 style="margin:0; font-family:var(--font-title);">🔮 คลังปุ่มวิเศษและระบบสารสนเทศ (Magic Hub)</h2>
+          <p style="margin:4px 0 0; font-size:0.86rem; color:var(--nui-text-secondary);">เลือกหมวดหมู่ด้านล่าง • กด ⭐ เพื่อปักหมุดไว้หน้าแรก หรือกด 📲 เพื่อสร้าง QR Code</p>
+        </div>
+
+        <div class="nui-magic-toolbar">
+          <div class="nui-search-wrap">
+            <span class="nui-search-icon">🔍</span>
+            <input type="text" id="nui-magic-search" class="nui-search-input" placeholder="พิมพ์ค้นหาชื่อปุ่มวิเศษ..." oninput="renderNewUIMagic()">
+          </div>
+          <button type="button" class="nui-action-btn" onclick="document.getElementById('nui-magic-search').value=''; renderNewUIMagic();">ล้างคำค้น</button>
+        </div>
+
+        <div id="nui-category-pills" class="nui-category-pills"></div>
+        <div id="nui-magic-cards-grid" class="nui-magic-rows-grid"></div>
+      </div>
+
+      <!-- 3. CALENDAR SPLIT WORKSPACE -->
+      <div id="nui-view-calendar" class="nui-view">
+        <div class="nui-bento-card" style="margin-bottom:16px;">
+          <div class="nui-card-head" style="margin-bottom:0;">
+            <div>
+              <h3 class="nui-card-title">📅 ปฏิทินงานเยี่ยมบ้าน & แบบฟอร์มลงนัด (Dual-Workspace Mockup)</h3>
+              <p class="nui-card-sub">ในระบบจริงเชื่อม Google Calendar & Google Form (จำลองหน้าจอโต้ตอบได้จริงใน Demo)</p>
+            </div>
+            <div class="nui-tab-pills">
+              <button type="button" id="nui-cal-mode-split" class="nui-tab-pill active" onclick="setNuiCalendarMode('split')">⚡ แบ่งจอคู่</button>
+              <button type="button" id="nui-cal-mode-calendar" class="nui-tab-pill" onclick="setNuiCalendarMode('calendar')">📅 เฉพาะปฏิทิน</button>
+              <button type="button" id="nui-cal-mode-form" class="nui-tab-pill" onclick="setNuiCalendarMode('form')">📝 เฉพาะฟอร์ม</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="nui-cal-workspace" class="nui-cal-workspace">
+          <div class="nui-bento-card nui-cal-pane-cal">
+            <h4 class="nui-card-title" style="margin-bottom:12px;">🗓️ ตารางนัดหมายเยี่ยมบ้านจำลอง</h4>
+            <div id="nui-apt-list"></div>
+          </div>
+          <div class="nui-bento-card nui-cal-pane-form">
+            <h4 class="nui-card-title" style="margin-bottom:12px;">📝 แบบฟอร์มลงข้อมูลวันเยี่ยมบ้าน (Mock Form)</h4>
+            <form id="nui-apt-form" onsubmit="handleNuiAppointmentSubmit(event)">
+              <div class="nui-form-field"><label>วันที่นัดเยี่ยม *</label><input type="date" id="nui-apt-date" value="2026-11-22" required></div>
+              <div class="nui-form-field"><label>ช่วงเวลา *</label><select id="nui-apt-time"><option>09:00 - 10:30 น.</option><option>13:30 - 15:00 น.</option></select></div>
+              <div class="nui-form-field"><label>ชื่อ-สกุลผู้ป่วย (สมมติ) *</label><input type="text" id="nui-apt-patient" placeholder="เช่น คุณมานะ (จำลอง)" required></div>
+              <div class="nui-form-field"><label>เขต / ชุมชน *</label><input type="text" id="nui-apt-zone" placeholder="เช่น ชุมชนวัดธาตุทอง โซน A" required></div>
+              <div class="nui-form-field"><label>ทีมสหวิชาชีพ *</label><input type="text" id="nui-apt-team" placeholder="เช่น พยาบาล + แพทย์" required></div>
+              <button type="submit" class="nui-action-btn" style="width:100%; justify-content:center; background:var(--nui-accent); color:#fff; border:none; padding:10px;">💾 บันทึกนัดหมายจำลอง</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. HEALTH EDU -->
+      <div id="nui-view-edu" class="nui-view">
+        <div class="nui-bento-card">
+          <h3 class="nui-card-title" style="margin-bottom:14px;">📚 ระบบงานสุขศึกษาและคลังภาพกิจกรรม (Demo Mock)</h3>
+          <div class="nui-edu-list">
+            <div class="nui-edu-card" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="openNuiQrModal('ระบบสุขศึกษา h.Edu (Demo)', 'https://example.com/demo/h-edu', 'สุขศึกษา')">
+              <div><strong>💡 ระบบสุขศึกษา h.Edu เฮ็ดอีดูว์ (Demo)</strong><div style="font-size:0.84rem; opacity:0.9;">ระบบจัดการสื่อความรู้สุขภาพผู้ป่วยและญาติ</div></div>
+              <span>📲 QR</span>
+            </div>
+            <div class="nui-edu-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="openNuiQrModal('คลังภาพสอนสุขศึกษา ปี 69+ (Demo)', 'https://example.com/demo/edu-drive-69', 'สุขศึกษา')">
+              <div><strong>📂 รวมรูปการสอนสุขศึกษา ปี 69 ขึ้นไป (Demo)</strong><div style="font-size:0.84rem; opacity:0.9;">คลังภาพกิจกรรมจำลอง (ซ่อน Drive ID จริง)</div></div>
+              <span>📲 QR</span>
+            </div>
+            <div class="nui-edu-card" style="background: linear-gradient(135deg, #3b82f6, #2563eb);" onclick="openNuiQrModal('คลังภาพสอนสุขศึกษา 67-68 (Demo)', 'https://example.com/demo/edu-drive-67-68', 'สุขศึกษา')">
+              <div><strong>📁 รวมรูปการสอนสุขศึกษา (67-68) (Demo)</strong><div style="font-size:0.84rem; opacity:0.9;">คลังภาพย้อนหลังจำลอง (ซ่อน Drive ID จริง)</div></div>
+              <span>📲 QR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. LINE PRESENTATION MOCK -->
+      <div id="nui-view-line" class="nui-view">
+        <div class="nui-bento-card">
+          <div class="nui-card-head">
+            <div>
+              <h3 class="nui-card-title">📥 เปิดไฟล์นำเสนอจาก Line (In-App Mock Viewer)</h3>
+              <p class="nui-card-sub">ในระบบจริงฝัง GAS Web App (ถูกลบ URL จริงออกและแสดง Mock Slide Viewer)</p>
+            </div>
+            <button type="button" class="nui-action-btn" onclick="openNuiQrModal('ระบบนำเสนอ Line (Demo)', 'https://example.com/demo/line-presentation', 'นำเสนอ Line')">📲 QR Code</button>
+          </div>
+          <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:16px; padding:36px 24px; text-align:center;">
+            <div style="font-size:0.8rem; color:#34d399; margin-bottom:8px;">SLIDE <span id="mock-slide-num">1</span> / 3</div>
+            <h2 id="mock-slide-title" style="font-family:var(--font-title); margin:0 0 10px;">สรุปผลการเยี่ยมบ้านประจำเดือน (ข้อมูลจำลอง)</h2>
+            <p id="mock-slide-body" style="color:#cbd5e1; max-width:540px; margin:0 auto 20px;">เคสเยี่ยมบ้านสะสมจำลอง 48 ราย • ผู้ป่วย IMC ฟื้นฟูต่อเนื่อง 14 ราย • อัตราความพึงพอใจ 96%</p>
+            <div style="display:flex; justify-content:center; gap:10px;">
+              <button type="button" class="nui-action-btn" onclick="changeMockSlide(-1)">◀ ก่อนหน้า</button>
+              <button type="button" class="nui-action-btn" onclick="changeMockSlide(1)">ถัดไป ▶</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. SEVANA CHAT (EMBEDDED LIVE DEMO + FALLBACK MOCK) -->
+      <div id="nui-view-sevana" class="nui-view">
+        <div class="nui-bento-card">
+          <div class="nui-card-head">
+            <div>
+              <h3 class="nui-card-title">💬 SeVaNa21 — ระบบแชตประสานงานในเว็บ (Linked Live Demo)</h3>
+              <p class="nui-card-sub">เชื่อมต่อกับโฟลเดอร์ Demo_SeVaNa21 จริงในชุดงานนี้ (Persistent Iframe)</p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a href="../Demo_SeVaNa21/index.html" target="_blank" rel="noopener" class="nui-action-btn" style="background:var(--nui-accent); color:#fff; border:none;">↗ เปิด SeVaNa21 เต็มหน้าจอ</a>
+              <button type="button" class="nui-action-btn" onclick="openNuiQrModal('SeVaNa21 Team Chat (Demo)', '../Demo_SeVaNa21/index.html', 'ระบบแชต SeVaNa21')">📲 QR Code</button>
+            </div>
+          </div>
+          <iframe id="nui-sevana-frame" src="../Demo_SeVaNa21/index.html" title="SeVaNa21 Team Chat Demo" style="width:100%; height:620px; border:1px solid var(--nui-border); border-radius:16px; background:#fff;"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Bottom Dock -->
+    <div class="nui-floating-dock-wrap">
+      <div class="nui-floating-dock">
+        <button type="button" id="nui-dock-home" class="nui-dock-item active" onclick="nuiSwitchView('home')">🏠 <span class="dock-label">หน้าแรก</span></button>
+        <button type="button" id="nui-dock-magic" class="nui-dock-item" onclick="nuiSwitchView('magic')">🔮 <span class="dock-label">ปุ่มวิเศษ</span></button>
+        <button type="button" id="nui-dock-calendar" class="nui-dock-item" onclick="nuiSwitchView('calendar')">📅 <span class="dock-label">ปฏิทิน & นัด</span></button>
+        <button type="button" id="nui-dock-edu" class="nui-dock-item" onclick="nuiSwitchView('edu')">📚 <span class="dock-label">สุขศึกษา</span></button>
+        <button type="button" id="nui-dock-line" class="nui-dock-item" onclick="nuiSwitchView('line')">📥 <span class="dock-label">นำเสนอ Line</span></button>
+        <button type="button" id="nui-dock-sevana" class="nui-dock-item" onclick="nuiSwitchView('sevana')">💬 <span class="dock-label">Sevana</span></button>
+        <a id="nui-dock-admin" href="index.html?view=admin&role=admin" class="nui-dock-item" style="display:none;">⚙️ <span class="dock-label">ตั้งค่า Admin</span></a>
+        <div class="nui-dock-divider"></div>
+        <button type="button" class="nui-dock-item" onclick="openNuiSpotlight()">🔍 <span class="dock-label">ค้นหา</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spotlight Modal -->
+  <div id="modal-nui-spotlight" class="nui-modal-backdrop" onclick="if(event.target===this) closeNuiSpotlight()">
+    <div class="nui-spotlight-box">
+      <div class="nui-spotlight-head">
+        <span>🔍</span>
+        <input type="text" id="nui-spotlight-input" class="nui-spotlight-input" placeholder="พิมพ์ชื่อระบบ, ฟอร์ม, หรือคำสั่ง..." oninput="renderNuiSpotlightResults()" onkeydown="handleNuiSpotlightKey(event)">
+        <span class="nui-kbd" style="cursor:pointer;" onclick="closeNuiSpotlight()">ESC</span>
+      </div>
+      <div id="nui-spotlight-results" class="nui-spotlight-list"></div>
+    </div>
+  </div>
+
+  <!-- Local Offline QR Modal -->
+  <div id="modal-nui-qr" class="nui-modal-backdrop" onclick="if(event.target===this) closeNuiQrModal()">
+    <div class="nui-qr-dialog">
+      <div id="nui-qr-cat" class="nui-live-badge" style="margin-bottom:8px;">📲 MOBILE HANDOFF</div>
+      <h3 id="nui-qr-title" style="font-family:var(--font-title); margin:0 0 6px;">QR Code</h3>
+      <p style="font-size:0.82rem; color:#94a3b8; margin:0;">สร้าง SVG QR Code จำลองแบบ Offline (ไม่เรียก External API)</p>
+      <div class="nui-qr-frame"><img id="nui-qr-img" src="" alt="QR"></div>
+      <div id="nui-qr-url-box" style="font-size:0.75rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:8px; border-radius:10px; word-break:break-all; margin-bottom:12px;"></div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="nui-action-btn" style="flex:1; justify-content:center;" onclick="copyNuiQrUrl()">📋 คัดลอกลิงก์</button>
+        <button type="button" class="nui-action-btn" onclick="closeNuiQrModal()">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="mock-data.js"></script>
+  <script>
+    var webData = HhcDemoStore.loadSandboxData();
+    var currentUser = "user";
+    var selectedCategory = "ระบบงาน";
+    var launchpadTab = "pinned";
+    var currentQrUrl = "";
+    var spotlightItems = [];
+    var spotlightIndex = 0;
+    var slideIndex = 0;
+    var mockSlides = [
+      { title: "สรุปผลการเยี่ยมบ้านประจำเดือน (ข้อมูลจำลอง)", body: "เคสเยี่ยมบ้านสะสมจำลอง 48 ราย • ผู้ป่วย IMC ฟื้นฟูต่อเนื่อง 14 ราย • อัตราความพึงพอใจ 96%" },
+      { title: "แผนการลงพื้นที่ทีมสหวิชาชีพ (สัปดาห์หน้า)", body: "วันอังคาร: ชุมชนวัดธาตุทอง โซน A • วันพฤหัสบดี: ชุมชนพระโขนง โซน B" },
+      { title: "แนวทางส่งต่อข้อมูลระบบสุขภาพ กทม.", body: "เตรียมความพร้อมเชื่อมโยงข้อมูลการเยี่ยมบ้านกับ BKK Home Care & สปสช." }
+    ];
+
+    function showToast(msg) {
+      var box = document.getElementById("toast-container");
+      if (!box) {
+        box = document.createElement("div");
+        box.id = "toast-container";
+        box.style.cssText = "position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:8px;";
+        document.body.appendChild(box);
+      }
+      var el = document.createElement("div");
+      el.style.cssText = "background:#059669; color:#fff; padding:10px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; box-shadow:0 8px 20px rgba(0,0,0,0.2);";
+      el.innerText = msg;
+      box.appendChild(el);
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2500);
+    }
+
+    function reloadDemo() {
+      webData = HhcDemoStore.loadSandboxData();
+      renderAll();
+      showToast("ซิงค์ข้อมูล Demo เรียบร้อย");
+    }
+
+    function toggleNuiTheme() {
+      var next = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      document.body.setAttribute("data-theme", next);
+      document.getElementById("nui-theme-btn").innerText = next === "dark" ? "☀️ โหมดขาวมุก" : "🌙 โหมดมืด Obsidian";
+    }
+
+    function nuiSwitchView(viewId) {
+      document.querySelectorAll(".nui-view").forEach(function (v) { v.classList.remove("active"); });
+      var target = document.getElementById("nui-view-" + viewId);
+      if (target) target.classList.add("active");
+      document.querySelectorAll(".nui-dock-item[id^='nui-dock-']").forEach(function (b) { b.classList.remove("active"); });
+      var dockBtn = document.getElementById("nui-dock-" + viewId);
+      if (dockBtn) dockBtn.classList.add("active");
+    }
+
+    function setNuiCalendarMode(mode) {
+      var ws = document.getElementById("nui-cal-workspace");
+      ws.classList.remove("mode-calendar", "mode-form");
+      if (mode === "calendar") ws.classList.add("mode-calendar");
+      if (mode === "form") ws.classList.add("mode-form");
+      ["split", "calendar", "form"].forEach(function (m) {
+        document.getElementById("nui-cal-mode-" + m).classList.toggle("active", m === mode);
+      });
+    }
+
+    function getPinnedIds() {
+      try { return JSON.parse(localStorage.getItem("hhc_demo_pinned") || "[]"); } catch (e) { return []; }
+    }
+    function getRecentIds() {
+      try { return JSON.parse(localStorage.getItem("hhc_demo_recent") || "[]"); } catch (e) { return []; }
+    }
+    function togglePinButton(btnId) {
+      var list = getPinnedIds();
+      var idx = list.indexOf(btnId);
+      if (idx === -1) list.unshift(btnId); else list.splice(idx, 1);
+      localStorage.setItem("hhc_demo_pinned", JSON.stringify(list));
+      renderNewUIMagic();
+      renderNewUILaunchpad();
+      updateStats();
+    }
+    function recordRecent(btnId) {
+      var list = getRecentIds().filter(function (id) { return id !== btnId; });
+      list.unshift(btnId);
+      localStorage.setItem("hhc_demo_recent", JSON.stringify(list.slice(0, 8)));
+      renderNewUILaunchpad();
+    }
+
+    function switchLaunchpadTab(tab) {
+      launchpadTab = tab;
+      document.getElementById("nui-tab-pinned").classList.toggle("active", tab === "pinned");
+      document.getElementById("nui-tab-recent").classList.toggle("active", tab === "recent");
+      renderNewUILaunchpad();
+    }
+
+    function getVisibleButtons() {
+      return (webData.buttons || []).filter(function (b) { return !(b.category === "Dev" && currentUser !== "admin"); });
+    }
+
+    function openMagicButtonTarget(btn) {
+      if (!btn) return;
+      recordRecent(btn.id);
+      if (btn.url && btn.url.indexOf("../") === 0) {
+        showToast("กำลังเปิดระบบ: " + btn.title);
+        window.open(encodeURI(btn.url), "_blank", "noopener");
+      } else {
+        showToast("เปิดลิงก์จำลอง: " + btn.title);
+      }
+    }
+
+    function renderNewUILaunchpad() {
+      var box = document.getElementById("nui-launchpad-list");
+      box.innerHTML = "";
+      var all = getVisibleButtons();
+      var ids = launchpadTab === "pinned" ? getPinnedIds() : getRecentIds();
+      var items = ids.map(function (id) { return all.find(function (b) { return b.id === id; }); }).filter(Boolean);
+      if (items.length === 0) items = all.slice(0, 4);
+      items.forEach(function (btn) {
+        var el = document.createElement("div");
+        el.className = "nui-pin-item";
+        el.innerHTML = '<div><div class="nui-pin-title">' + btn.title + '</div><div class="nui-pin-cat">' + btn.category + '</div></div><span>↗</span>';
+        el.onclick = function () {
+          openMagicButtonTarget(btn);
+        };
+        box.appendChild(el);
+      });
+    }
+
+    function renderNewUIMagic() {
+      var all = getVisibleButtons();
+      var cats = [
+        { key: "ระบบงาน", label: "💻 ระบบงาน" },
+        { key: "Hyper link", label: "🔗 Hyper link" },
+        { key: "แบบฟอร์มต่างๆที่ใช้บ่อย", label: "📋 แบบฟอร์มต่างๆ" },
+        { key: "ไฟล์อื่นๆ", label: "📁 ไฟล์อื่นๆ" }
+      ];
+      if (currentUser === "admin") cats.push({ key: "Dev", label: "🛠️ Dev (Admin)" });
+
+      var pills = document.getElementById("nui-category-pills");
+      pills.innerHTML = "";
+      cats.forEach(function (c) {
+        var count = all.filter(function (b) { return b.category === c.key; }).length;
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "nui-cat-pill" + (selectedCategory === c.key ? " active" : "");
+        b.innerText = c.label + " (" + count + ")";
+        b.onclick = function () { selectedCategory = c.key; renderNewUIMagic(); };
+        pills.appendChild(b);
+      });
+
+      var q = document.getElementById("nui-magic-search").value.toLowerCase().trim();
+      var filtered = all.filter(function (b) {
+        if (q) return b.title.toLowerCase().indexOf(q) !== -1 || b.category.toLowerCase().indexOf(q) !== -1;
+        return b.category === selectedCategory;
+      });
+
+      var grid = document.getElementById("nui-magic-cards-grid");
+      grid.innerHTML = "";
+      var pinned = getPinnedIds();
+      filtered.forEach(function (btn) {
+        var isPin = pinned.indexOf(btn.id) !== -1;
+        var row = document.createElement("div");
+        row.className = "nui-magic-row";
+        var infoDiv = document.createElement("div");
+        infoDiv.style.cssText = "cursor:pointer; flex:1;";
+        infoDiv.innerHTML =
+          '<div style="font-family:var(--font-title); font-size:0.94rem;">' + btn.title + '</div>' +
+          '<div style="font-size:0.76rem; color:var(--nui-text-secondary);">' + btn.category + ' • ' + (btn.url.indexOf("../") === 0 ? "🔗 เชื่อมต่อระบบจริงในชุด Demo" : btn.url) + '</div>';
+        infoDiv.onclick = function () { openMagicButtonTarget(btn); };
+        var toolsDiv = document.createElement("div");
+        toolsDiv.className = "nui-row-tools";
+        toolsDiv.innerHTML =
+          '<button type="button" class="nui-icon-btn ' + (isPin ? "pinned" : "") + '" onclick="togglePinButton(\'' + btn.id + '\')">⭐</button>' +
+          '<button type="button" class="nui-icon-btn" onclick="openNuiQrModal(\'' + btn.title.replace(/'/g, "") + '\', \'' + btn.url + '\', \'' + btn.category + '\')">📲</button>';
+        row.appendChild(infoDiv);
+        row.appendChild(toolsDiv);
+        grid.appendChild(row);
+      });
+    }
+
+    function renderNuiAppointments() {
+      var list = document.getElementById("nui-apt-list");
+      list.innerHTML = "";
+      (webData.mockAppointments || []).forEach(function (apt) {
+        var d = document.createElement("div");
+        d.style.cssText = "padding:12px; border-radius:12px; background:var(--nui-pill-bg); border-left:4px solid var(--nui-accent); margin-bottom:10px; font-size:0.86rem;";
+        d.innerHTML = '<strong>' + apt.date + ' • ' + apt.timeSlot + '</strong> (' + apt.status + ')<br>👤 ' + apt.patientAlias + ' • 📍 ' + apt.zone + '<br>🩺 ' + apt.team + ' — <span style="color:var(--nui-accent);">' + apt.visitType + '</span>';
+        list.appendChild(d);
+      });
+    }
+
+    function handleNuiAppointmentSubmit(e) {
+      e.preventDefault();
+      webData.mockAppointments.unshift({
+        id: "APT-NUI-" + Date.now(),
+        date: document.getElementById("nui-apt-date").value,
+        timeSlot: document.getElementById("nui-apt-time").value,
+        patientAlias: document.getElementById("nui-apt-patient").value,
+        zone: document.getElementById("nui-apt-zone").value,
+        team: document.getElementById("nui-apt-team").value,
+        visitType: "นัดเยี่ยมบ้าน (New UI Demo)",
+        status: "บันทึกใหม่ (Demo)"
+      });
+      HhcDemoStore.saveSandboxData(webData);
+      renderNuiAppointments();
+      document.getElementById("nui-apt-form").reset();
+      showToast("บันทึกนัดหมายเยี่ยมบ้านจำลองเรียบร้อย");
+    }
+
+    function changeMockSlide(delta) {
+      slideIndex = (slideIndex + delta + mockSlides.length) % mockSlides.length;
+      document.getElementById("mock-slide-num").innerText = slideIndex + 1;
+      document.getElementById("mock-slide-title").innerText = mockSlides[slideIndex].title;
+      document.getElementById("mock-slide-body").innerText = mockSlides[slideIndex].body;
+    }
+
+    function renderMockChat() {
+      var box = document.getElementById("nui-chat-box");
+      if (!box) return;
+      box.innerHTML = "";
+      (webData.mockChatMessages || []).forEach(function (m) {
+        var el = document.createElement("div");
+        el.className = "nui-chat-msg" + (m.self ? " self" : "");
+        el.innerHTML = '<div style="font-size:0.74rem; opacity:0.8; margin-bottom:3px;"><strong>' + m.sender + '</strong> • ' + m.time + '</div><div>' + m.text + '</div>';
+        box.appendChild(el);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function sendMockChat(e) {
+      e.preventDefault();
+      var input = document.getElementById("nui-chat-input");
+      var text = input.value.trim();
+      if (!text) return;
+      var now = new Date();
+      var hhmm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+      webData.mockChatMessages.push({
+        sender: currentUser === "admin" ? "Demo Admin (คุณ)" : "Demo Staff (คุณ)",
+        role: currentUser,
+        time: hhmm,
+        text: text,
+        self: true
+      });
+      HhcDemoStore.saveSandboxData(webData);
+      input.value = "";
+      renderMockChat();
+    }
+
+    function openNuiQrModal(title, url, cat) {
+      currentQrUrl = url;
+      document.getElementById("nui-qr-title").innerText = title;
+      document.getElementById("nui-qr-cat").innerText = "📲 " + cat;
+      document.getElementById("nui-qr-url-box").innerText = url;
+      document.getElementById("nui-qr-img").src = HhcDemoStore.generateOfflineDemoQrSvg(url);
+      document.getElementById("modal-nui-qr").style.display = "flex";
+    }
+    function closeNuiQrModal() { document.getElementById("modal-nui-qr").style.display = "none"; }
+    function copyNuiQrUrl() {
+      if (navigator.clipboard) navigator.clipboard.writeText(currentQrUrl);
+      showToast("📋 คัดลอกลิงก์จำลองแล้ว");
+    }
+
+    function openNuiSpotlight() {
+      document.getElementById("modal-nui-spotlight").style.display = "flex";
+      var inp = document.getElementById("nui-spotlight-input");
+      inp.value = "";
+      spotlightIndex = 0;
+      renderNuiSpotlightResults();
+      setTimeout(function () { inp.focus(); }, 40);
+    }
+    function closeNuiSpotlight() { document.getElementById("modal-nui-spotlight").style.display = "none"; }
+    function renderNuiSpotlightResults() {
+      var q = document.getElementById("nui-spotlight-input").value.toLowerCase().trim();
+      var cmds = [
+        { title: "เปิดคลังปุ่มวิเศษ", sub: "คำสั่งนำทาง", action: function () { closeNuiSpotlight(); nuiSwitchView("magic"); } },
+        { title: "เปิดปฏิทิน & แบบฟอร์มลงนัด", sub: "คำสั่งนำทาง", action: function () { closeNuiSpotlight(); nuiSwitchView("calendar"); } },
+        { title: "เปิดหน้าสุขศึกษา", sub: "คำสั่งนำทาง", action: function () { closeNuiSpotlight(); nuiSwitchView("edu"); } },
+        { title: "เปิดระบบแชต Sevana", sub: "คำสั่งนำทาง", action: function () { closeNuiSpotlight(); nuiSwitchView("sevana"); } },
+        { title: "สลับโทนขาวมุก / โทนมืด Obsidian", sub: "คำสั่งปรับธีม", action: function () { closeNuiSpotlight(); toggleNuiTheme(); } }
+      ];
+      var btns = getVisibleButtons().map(function (b) {
+        return { title: b.title, sub: "หมวด: " + b.category, action: function () { closeNuiSpotlight(); openMagicButtonTarget(b); } };
+      });
+      spotlightItems = btns.concat(cmds).filter(function (i) {
+        return !q || i.title.toLowerCase().indexOf(q) !== -1 || i.sub.toLowerCase().indexOf(q) !== -1;
+      });
+      var list = document.getElementById("nui-spotlight-results");
+      list.innerHTML = "";
+      spotlightItems.forEach(function (item, idx) {
+        var row = document.createElement("div");
+        row.className = "nui-spot-item" + (idx === spotlightIndex ? " active" : "");
+        row.innerHTML = '<div><strong>' + item.title + '</strong><div style="font-size:0.78rem; color:var(--nui-text-secondary);">' + item.sub + '</div></div><span class="nui-kbd">Enter ↵</span>';
+        row.onclick = item.action;
+        list.appendChild(row);
+      });
+    }
+    function handleNuiSpotlightKey(e) {
+      if (e.key === "ArrowDown") { e.preventDefault(); spotlightIndex = (spotlightIndex + 1) % Math.max(1, spotlightItems.length); renderNuiSpotlightResults(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); spotlightIndex = (spotlightIndex - 1 + spotlightItems.length) % Math.max(1, spotlightItems.length); renderNuiSpotlightResults(); }
+      else if (e.key === "Enter" && spotlightItems[spotlightIndex]) { e.preventDefault(); spotlightItems[spotlightIndex].action(); }
+      else if (e.key === "Escape") { closeNuiSpotlight(); }
+    }
+
+    function updateStats() {
+      document.getElementById("nui-stat-buttons").innerText = getVisibleButtons().length;
+      document.getElementById("nui-stat-pinned").innerText = getPinnedIds().length;
+      document.getElementById("nui-stat-logos").innerText = (webData.logos || []).length;
+    }
+
+    function startClock() {
+      function tick() {
+        var d = new Date();
+        document.getElementById("nui-live-clock").innerText = d.toLocaleTimeString("th-TH", { hour12: false });
+        document.getElementById("nui-live-date").innerText = d.toLocaleDateString("th-TH", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+      }
+      tick();
+      setInterval(tick, 1000);
+    }
+
+    function renderAll() {
+      if (webData.logos && webData.logos.length > 0) {
+        document.getElementById("nui-nav-logo").src = webData.logos[0].url;
+      }
+      if (webData.settings && webData.settings.banner_home) {
+        document.getElementById("nui-banner-home").innerHTML = '<img src="' + webData.settings.banner_home + '" alt="banner">';
+      }
+      renderNewUILaunchpad();
+      renderNewUIMagic();
+      renderNuiAppointments();
+      renderMockChat();
+      updateStats();
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        openNuiSpotlight();
+      } else if (e.key === "Escape") {
+        closeNuiSpotlight();
+        closeNuiQrModal();
+      }
+    });
+
+    (function init() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        currentUser = params.get("role") || localStorage.getItem("hhc_demo_role") || "user";
+      } catch (e) {}
+      document.getElementById("nui-user-avatar").innerText = currentUser === "admin" ? "A" : "S";
+      document.getElementById("nui-user-role-badge").innerText = currentUser === "admin" ? "ผู้ดูแลระบบสาธิต (Demo Admin)" : "เจ้าหน้าที่เยี่ยมบ้าน (Demo Staff)";
+      document.getElementById("nui-dock-admin").style.display = currentUser === "admin" ? "inline-flex" : "none";
+      startClock();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>

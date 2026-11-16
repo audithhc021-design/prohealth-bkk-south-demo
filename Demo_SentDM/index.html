@@ -1,0 +1,2402 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[DEMO] ระบบส่งต่อผู้ป่วย สหวิชาชีพ (DM) - SentDM Mock-up</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Flatpickr (Thai Calendar) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Theme Colors (ตรงตามระบบจริง) */
+        .theme-opd { background-color: #ecfdf5; border-color: #10b981; }
+        .theme-opd .btn-primary { background-color: #10b981; color: white; }
+        .theme-opd .btn-primary:hover { background-color: #059669; }
+        .theme-opd .text-primary { color: #059669; }
+
+        .theme-home { background-color: #eff6ff; border-color: #3b82f6; }
+        .theme-home .btn-primary { background-color: #3b82f6; color: white; }
+        .theme-home .btn-primary:hover { background-color: #2563eb; }
+        .theme-home .text-primary { color: #2563eb; }
+
+        .theme-pt { background-color: #f0fdfa; border-color: #0d9488; }
+        .theme-pt .btn-primary { background-color: #0d9488; color: white; }
+        .theme-pt .btn-primary:hover { background-color: #0f766e; }
+        .theme-pt .text-primary { color: #0f766e; }
+
+        .theme-social { background-color: #fffbeb; border-color: #d97706; }
+        .theme-social .btn-primary { background-color: #d97706; color: white; }
+        .theme-social .btn-primary:hover { background-color: #b45309; }
+        .theme-social .text-primary { color: #b45309; }
+
+        .theme-kaomai { background-color: #eef2ff; border-color: #4f46e5; }
+        .theme-kaomai .btn-primary { background-color: #4f46e5; color: white; }
+        .theme-kaomai .btn-primary:hover { background-color: #4338ca; }
+        .theme-kaomai .text-primary { color: #4338ca; }
+
+        .theme-mental { background-color: #fff1f2; border-color: #e11d48; }
+        .theme-mental .btn-primary { background-color: #e11d48; color: white; }
+        .theme-mental .btn-primary:hover { background-color: #be123c; }
+        .theme-mental .text-primary { color: #be123c; }
+
+        .theme-default { background-color: #ffffff; }
+        .theme-default .btn-primary { background-color: #4b5563; color: white; }
+
+        .sidebar-transition {
+            transition: all 0.3s ease-in-out;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        select,
+        textarea {
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            width: 100%;
+            outline: none;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="password"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #6b7280;
+            box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.2);
+        }
+
+        input[readonly],
+        textarea[readonly] {
+            background-color: #f3f4f6;
+            font-weight: bold;
+        }
+
+        .checkbox-styled {
+            width: 1.25rem;
+            height: 1.25rem;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .checkbox-styled:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    </style>
+
+    <!-- ========================================================= -->
+    <!-- DEMO MOCK ENVIRONMENT (แทน Google Apps Script & Real Data) -->
+    <!-- ไม่มี API Key, URL จริง, Google Sheet ID จริง หรือรหัสจริง     -->
+    <!-- ========================================================= -->
+    <script>
+        (function () {
+            const STORAGE_KEY_PATIENTS = 'sentdm_demo_patients_v1';
+            const STORAGE_KEY_LOGS = 'sentdm_demo_logs_v1';
+            const STORAGE_KEY_LINE_CFG = 'sentdm_demo_line_cfg_v1';
+
+            // ข้อมูลผู้ป่วยจำลอง (Mock Patients) ครอบคลุม 6 แผนก และสถานการณ์ต่างๆ
+            const DEFAULT_MOCK_PATIENTS = [
+                {
+                    _rowIndex: 2,
+                    Timestamp: '10/11/2569',
+                    CID: "'1100100000001",
+                    HN: 'HN690001',
+                    ชื่อ: 'นายสมชาย',
+                    นามสกุล: 'ใจดี (จำลอง)',
+                    แผนก: 'OPD',
+                    วันเกิด: '15/05/2500',
+                    อายุ: '69',
+                    ที่อยู่: '123/4 ซอยสาทร 11 แขวงยานนาวา เขตสาทร กทม.',
+                    เบอร์โทร: "'0810000001",
+                    ชุมชน: 'ชุมชนร่วมใจพัฒนา (จำลอง)',
+                    โรคร่วม: 'DM Type 2, HT, DLP',
+                    ส่วนสูง: '168',
+                    น้ำหนัก: '72',
+                    BP: '146/92',
+                    ผล_BP: 'Stage2',
+                    DTX_NPO: '168',
+                    ผล_DTX_NPO: 'DM',
+                    DTX_หลังอาหาร: '224',
+                    ผล_DTX_หลังอาหาร: 'DM',
+                    HbA1C: '8.4',
+                    วันที่ตรวจเจอ: '01/10/2569',
+                    สาเหตุที่ส่ง: 'น้ำตาลสูงต่อเนื่อง ต้องการเยี่ยมบ้านประเมินการใช้ยาและแผลที่เท้า',
+                    วันที่มาพบแพทย์: '25/11/2569',
+                    NG: 'FALSE',
+                    F_C: 'FALSE',
+                    Labประจำปี: 'FBS, HbA1C, Lipid, Cr (10/11/2569)',
+                    'ครั้งที่1_วันที่ส่งต่อ': '10/11/2569',
+                    'ครั้งที่1_ข้อมูลเพิ่มเติม': 'ผู้ป่วยมีแผลเล็กที่นิ้วเท้าขวา แนะนำทำแผลและประเมินการฉีดยา',
+                    'ครั้งที่1_วันที่เยี่ยม': '12/11/2569',
+                    'ครั้งที่1_กิจกรรมพยาบาล': 'ประเมินแผลเท้า สอนเทคนิคฉีดอินซูลิน และตรวจ DTX ซ้ำ (152 mg%)',
+                    'ครั้งที่1_ผู้รายงาน': 'พยาบาลเยี่ยมบ้าน (จำลอง)',
+                    'ครั้งที่1_ทำแผลต่อเนื่อง': 'TRUE',
+                    'ครั้งที่1_ระบุแผล': 'แผลตื้นบริเวณนิ้วหัวแม่เท้าขวา ขนาด 1x1 ซม.',
+                    'ครั้งที่1_เปลี่ยนสาย_NG': 'FALSE',
+                    'ครั้งที่1_เปลี่ยน_Foleys_cath': 'FALSE',
+                    'ครั้งที่1_ทำกายภาพ': 'FALSE',
+                    'ครั้งที่1_สังคมสงเคราะห์': 'FALSE',
+                    'ครั้งที่1_เจาะเลือด': 'TRUE',
+                    'ครั้งที่1_อื่นๆ_เช็ค': 'FALSE',
+                    'ครั้งที่1_อื่นๆ_ระบุ': '',
+                    'ครั้งที่2_วันที่ส่งต่อ': '14/11/2569',
+                    'ครั้งที่2_ข้อมูลเพิ่มเติม': 'ส่งติดตามซ้ำรอบที่ 2 เพื่อดูพัฒนาการแผลและปรับพฤติกรรมอาหาร'
+                },
+                {
+                    _rowIndex: 3,
+                    Timestamp: '11/11/2569',
+                    CID: "'1100100000002",
+                    HN: 'HN690002',
+                    ชื่อ: 'นางสมหญิง',
+                    นามสกุล: 'รักสงบ (จำลอง)',
+                    แผนก: 'เยี่ยมบ้าน',
+                    วันเกิด: '20/08/2495',
+                    อายุ: '74',
+                    ที่อยู่: '88 ถนนเจริญกรุง เขตบางคอแหลม กทม.',
+                    เบอร์โทร: "'0810000002",
+                    ชุมชน: 'ชุมชนริมน้ำเจริญกรุง (จำลอง)',
+                    โรคร่วม: 'DM, Stroke (อ่อนแรงซีกซ้าย)',
+                    ส่วนสูง: '155',
+                    น้ำหนัก: '58',
+                    BP: '134/84',
+                    ผล_BP: 'Stage1',
+                    DTX_NPO: '118',
+                    ผล_DTX_NPO: 'IFG',
+                    DTX_หลังอาหาร: '165',
+                    ผล_DTX_หลังอาหาร: 'IFG',
+                    HbA1C: '7.1',
+                    วันที่ตรวจเจอ: '05/09/2569',
+                    สาเหตุที่ส่ง: 'ผู้ป่วยติดบ้าน หลัง Stroke ต้องการฟื้นฟูกายภาพบำบัด',
+                    วันที่มาพบแพทย์: '28/11/2569',
+                    NG: 'TRUE',
+                    F_C: 'TRUE',
+                    Labประจำปี: 'CBC, FBS, Electrolytes',
+                    'ครั้งที่1_วันที่ส่งต่อ': '11/11/2569',
+                    'ครั้งที่1_ข้อมูลเพิ่มเติม': 'ขอทีมกายภาพบำบัดช่วยประเมินการฝึกกล้ามเนื้อและเปลี่ยนสาย NG/Foley'
+                },
+                {
+                    _rowIndex: 4,
+                    Timestamp: '08/11/2569',
+                    CID: "'1100100000003",
+                    HN: 'HN690003',
+                    ชื่อ: 'นายวิชัย',
+                    นามสกุล: 'มุ่งมั่น (จำลอง)',
+                    แผนก: 'กายภาพบำบัด',
+                    วันเกิด: '03/03/2505',
+                    อายุ: '64',
+                    ที่อยู่: '45/9 ถนนพระราม 3 เขตยานนาวา กทม.',
+                    เบอร์โทร: "'0810000003",
+                    ชุมชน: 'ชุมชนคลองใหม่ (จำลอง)',
+                    โรคร่วม: 'DM, OA Knee',
+                    ส่วนสูง: '170',
+                    น้ำหนัก: '80',
+                    BP: '126/82',
+                    ผล_BP: 'PreHT',
+                    DTX_NPO: '96',
+                    ผล_DTX_NPO: 'ปกติ',
+                    DTX_หลังอาหาร: '132',
+                    ผล_DTX_หลังอาหาร: 'ปกติ',
+                    HbA1C: '6.3',
+                    วันที่ตรวจเจอ: '15/08/2569',
+                    สาเหตุที่ส่ง: 'ปวดเข่าเรื้อรัง ต้องการประเมินสภาพแวดล้อมที่บ้านและช่วยเหลือสิทธิ์สวัสดิการ',
+                    วันที่มาพบแพทย์: '30/11/2569',
+                    NG: 'FALSE',
+                    F_C: 'FALSE',
+                    Labประจำปี: 'HbA1C (08/11/2569)',
+                    'ครั้งที่1_วันที่ส่งต่อ': '08/11/2569',
+                    'ครั้งที่1_ข้อมูลเพิ่มเติม': 'ส่งต่อสังคมสงเคราะห์พิจารณาอุปกรณ์ช่วยเดิน',
+                    'ครั้งที่1_วันที่เยี่ยม': '09/11/2569',
+                    'ครั้งที่1_กิจกรรมพยาบาล': 'ประเมินสิทธิ์สวัสดิการผู้สูงอายุ และจัดหา Walker',
+                    'ครั้งที่1_ผู้รายงาน': 'นักสังคมสงเคราะห์ (จำลอง)',
+                    'ครั้งที่1_ทำกายภาพ': 'TRUE',
+                    'ครั้งที่1_สังคมสงเคราะห์': 'TRUE'
+                },
+                {
+                    _rowIndex: 5,
+                    Timestamp: '12/11/2569',
+                    CID: "'1100100000004",
+                    HN: 'HN690004',
+                    ชื่อ: 'นางสาวมาลี',
+                    นามสกุล: 'สุขใจ (จำลอง)',
+                    แผนก: 'สังคมสงเคราะห์',
+                    วันเกิด: '12/12/2510',
+                    อายุ: '59',
+                    ที่อยู่: '22 ซอยจันทน์ 16 เขตสาทร กทม.',
+                    เบอร์โทร: "'0810000004",
+                    ชุมชน: 'ชุมชนจันทน์พัฒนา (จำลอง)',
+                    โรคร่วม: 'DM, ภาวะซึมเศร้าเล็กน้อย',
+                    ส่วนสูง: '158',
+                    น้ำหนัก: '61',
+                    BP: '118/76',
+                    ผล_BP: 'ปกติ',
+                    DTX_NPO: '142',
+                    ผล_DTX_NPO: 'DM',
+                    DTX_หลังอาหาร: '190',
+                    ผล_DTX_หลังอาหาร: 'IFG',
+                    HbA1C: '7.9',
+                    วันที่ตรวจเจอ: '01/11/2569',
+                    สาเหตุที่ส่ง: 'ผู้ป่วยอยู่ลำพัง ขาดแรงจูงใจในการควบคุมอาหารและทานยา',
+                    วันที่มาพบแพทย์: '05/12/2569',
+                    NG: 'FALSE',
+                    F_C: 'FALSE',
+                    Labประจำปี: 'FBS, HbA1C',
+                    'ครั้งที่1_วันที่ส่งต่อ': '12/11/2569',
+                    'ครั้งที่1_ข้อมูลเพิ่มเติม': 'ส่งต่อทีมสุขภาพจิตประเมินภาวะซึมเศร้าและให้คำปรึกษา'
+                },
+                {
+                    _rowIndex: 6,
+                    Timestamp: '13/11/2569',
+                    CID: "'1100100000005",
+                    HN: 'HN690005',
+                    ชื่อ: 'นายประเสริฐ',
+                    นามสกุล: 'ก้าวหน้า (จำลอง)',
+                    แผนก: 'ก้าวใหม่พลัส',
+                    วันเกิด: '09/01/2515',
+                    อายุ: '54',
+                    ที่อยู่: '99 ถนนสีลม เขตบางรัก กทม.',
+                    เบอร์โทร: "'0810000005",
+                    ชุมชน: 'ชุมชนบางรัก (จำลอง)',
+                    โรคร่วม: 'DM, สูบบุหรี่/ปรับเปลี่ยนพฤติกรรม',
+                    ส่วนสูง: '172',
+                    น้ำหนัก: '75',
+                    BP: '182/112',
+                    ผล_BP: 'ควรพบแพทย์ทันที',
+                    DTX_NPO: '210',
+                    ผล_DTX_NPO: 'DM',
+                    DTX_หลังอาหาร: '285',
+                    ผล_DTX_หลังอาหาร: 'DM',
+                    HbA1C: '9.8',
+                    วันที่ตรวจเจอ: '13/11/2569',
+                    สาเหตุที่ส่ง: 'ความดันและน้ำตาลสูงวิกฤต ส่งต่อ OPD เร่งด่วน',
+                    วันที่มาพบแพทย์: '14/11/2569',
+                    NG: 'FALSE',
+                    F_C: 'FALSE',
+                    Labประจำปี: 'รอผล Lab',
+                    'ครั้งที่1_วันที่ส่งต่อ': '13/11/2569',
+                    'ครั้งที่1_ข้อมูลเพิ่มเติม': 'ประสาน OPD รับส่งต่อเร่งด่วน',
+                    'ครั้งที่1_วันที่เยี่ยม': '14/11/2569',
+                    'ครั้งที่1_กิจกรรมพยาบาล': 'พบแพทย์ปรับยาลดความดันและยาเบาหวานเรียบร้อย',
+                    'ครั้งที่1_ผู้รายงาน': 'พยาบาล OPD (จำลอง)'
+                },
+                {
+                    _rowIndex: 7,
+                    Timestamp: '15/11/2569',
+                    CID: "'1100100000006",
+                    HN: 'HN690006',
+                    ชื่อ: 'นางสาวอารี',
+                    นามสกุล: 'สงบจิต (จำลอง)',
+                    แผนก: 'สุขภาพจิต',
+                    วันเกิด: '25/07/2508',
+                    อายุ: '61',
+                    ที่อยู่: '77 ซอยสาธุประดิษฐ์ เขตยานนาวา กทม.',
+                    เบอร์โทร: "'0810000006",
+                    ชุมชน: 'ชุมชนสาธุประดิษฐ์ (จำลอง)',
+                    โรคร่วม: 'DM, Generalized Anxiety',
+                    ส่วนสูง: '160',
+                    น้ำหนัก: '56',
+                    BP: '120/78',
+                    ผล_BP: 'ปกติ',
+                    DTX_NPO: '112',
+                    ผล_DTX_NPO: 'IFG',
+                    DTX_หลังอาหาร: '155',
+                    ผล_DTX_หลังอาหาร: 'IFG',
+                    HbA1C: '6.8',
+                    วันที่ตรวจเจอ: '02/11/2569',
+                    สาเหตุที่ส่ง: 'ประสานทีมเยี่ยมบ้านติดตามการนอนหลับและการทานยาสม่ำเสมอ',
+                    วันที่มาพบแพทย์: '20/12/2569',
+                    NG: 'FALSE',
+                    F_C: 'FALSE',
+                    Labประจำปี: 'FBS, HbA1C',
+                    'ครั้งที่1_วันที่ส่งต่อ': '15/11/2569',
+                    'ครั้งที่1_ข้อมูลเพิ่มเติม': 'ติดตามเยี่ยมบ้านประเมินความเครียดร่วมกับระดับน้ำตาล'
+                }
+            ];
+
+            // รายชื่อ CID จำลองที่ถือว่า "ซ้ำ" ในชีท DMคุณภาพ / DMทั่วไป
+            const MOCK_DM_QUAL_CIDS = ['1100100000001', '1100100000003'];
+            const MOCK_DM_GEN_CIDS = ['1100100000002', '1100100000005'];
+
+            // ประวัติการแจ้งเตือน LINE จำลอง (Mock Logs)
+            const DEFAULT_MOCK_LOGS = [
+                {
+                    Timestamp: '2569-11-15 10:15:00',
+                    ประเภท: 'ส่งต่อ',
+                    ครั้งที่: '1',
+                    จากแผนก: 'สุขภาพจิต',
+                    ส่งถึงแผนก: 'เยี่ยมบ้าน',
+                    HN: 'HN690006',
+                    'ชื่อ-นามสกุล': 'นางสาวอารี สงบจิต (จำลอง)',
+                    CID: "'1100100000006",
+                    ผู้ส่ง: 'เจ้าหน้าที่สุขภาพจิต (จำลอง)',
+                    'ข้อความ/ข้อมูลเพิ่มเติม': '***แจ้งเตือนการส่งต่อผู้ป่วย\nจากแผนก: สุขภาพจิต\nส่งต่อไปยัง: เยี่ยมบ้าน\nครั้งที่ส่งต่อ: 1\nวันที่ส่งต่อ: 15/11/2569\nผู้ป่วยชื่อ: นางสาวอารี สงบจิต (จำลอง)\nHN: HN690006\nเบอร์ติดต่อ: 0810000006\nที่อยู่: 77 ซอยสาธุประดิษฐ์ เขตยานนาวา กทม. (ชุมชน: ชุมชนสาธุประดิษฐ์ (จำลอง))\nสาเหตุที่ส่งต่อ: ประสานทีมเยี่ยมบ้านติดตามการนอนหลับและการทานยาสม่ำเสมอ\nข้อมูลเพิ่มเติม: ติดตามเยี่ยมบ้านประเมินความเครียดร่วมกับระดับน้ำตาล***',
+                    สถานะ: 'สำเร็จ (DEMO)'
+                },
+                {
+                    Timestamp: '2569-11-14 14:20:00',
+                    ประเภท: 'ส่งต่อ',
+                    ครั้งที่: '2',
+                    จากแผนก: 'OPD',
+                    ส่งถึงแผนก: 'เยี่ยมบ้าน',
+                    HN: 'HN690001',
+                    'ชื่อ-นามสกุล': 'นายสมชาย ใจดี (จำลอง)',
+                    CID: "'1100100000001",
+                    ผู้ส่ง: 'พยาบาล OPD (จำลอง)',
+                    'ข้อความ/ข้อมูลเพิ่มเติม': '***แจ้งเตือนการส่งต่อผู้ป่วย\nจากแผนก: OPD\nส่งต่อไปยัง: เยี่ยมบ้าน\nครั้งที่ส่งต่อ: 2\nวันที่ส่งต่อ: 14/11/2569\nผู้ป่วยชื่อ: นายสมชาย ใจดี (จำลอง)\nHN: HN690001***',
+                    สถานะ: 'สำเร็จ (DEMO)'
+                },
+                {
+                    Timestamp: '2569-11-12 16:05:00',
+                    ประเภท: 'ผลการเยี่ยม',
+                    ครั้งที่: '1',
+                    จากแผนก: 'เยี่ยมบ้าน',
+                    ส่งถึงแผนก: 'OPD',
+                    HN: 'HN690001',
+                    'ชื่อ-นามสกุล': 'นายสมชาย ใจดี (จำลอง)',
+                    CID: "'1100100000001",
+                    ผู้ส่ง: 'พยาบาลเยี่ยมบ้าน (จำลอง)',
+                    'ข้อความ/ข้อมูลเพิ่มเติม': '***แจ้งเตือนผลการเยี่ยม/การดูแล\nจากแผนก: เยี่ยมบ้าน\nครั้งที่เยี่ยม: 1\nวันที่เยี่ยม: 12/11/2569\nผู้ป่วยชื่อ: นายสมชาย ใจดี (จำลอง)\nกิจกรรม/รายงาน: ประเมินแผลเท้า สอนเทคนิคฉีดอินซูลิน และตรวจ DTX ซ้ำ (152 mg%)\nมีความต้องการ: ทำแผลต่อเนื่อง (แผลตื้นบริเวณนิ้วหัวแม่เท้าขวา ขนาด 1x1 ซม.), เจาะเลือด***',
+                    สถานะ: 'สำเร็จ (DEMO)'
+                },
+                {
+                    Timestamp: '2569-11-11 09:30:00',
+                    ประเภท: 'ทดสอบระบบ',
+                    ครั้งที่: '-',
+                    จากแผนก: 'Admin',
+                    ส่งถึงแผนก: 'OPD',
+                    HN: '-',
+                    'ชื่อ-นามสกุล': '-',
+                    CID: '-',
+                    ผู้ส่ง: 'ผู้ดูแลระบบ (จำลอง)',
+                    'ข้อความ/ข้อมูลเพิ่มเติม': '[ข้อความทดสอบ DEMO]\n🔔 ทดสอบการเชื่อมต่อ LINE Messaging API\n🏥 แผนก: OPD',
+                    สถานะ: 'สำเร็จ (DEMO)'
+                }
+            ];
+
+            // การตั้งค่า LINE จำลอง (ใช้ค่าสมมติ 100% ห้ามใส่ Token/Group ID จริง)
+            const DEFAULT_MOCK_LINE_CONFIGS = [
+                { dept: 'OPD', token: 'MOCK_LINE_TOKEN_OPD_PLACEHOLDER_001', groupId: 'C_MOCK_GROUP_OPD_0001', updatedAt: '2026-11-10 09:00:00', updatedBy: 'Demo Admin' },
+                { dept: 'เยี่ยมบ้าน', token: 'MOCK_LINE_TOKEN_HOME_PLACEHOLDER_002', groupId: 'C_MOCK_GROUP_HOME_0002', updatedAt: '2026-11-10 09:00:00', updatedBy: 'Demo Admin' },
+                { dept: 'กายภาพบำบัด', token: 'MOCK_LINE_TOKEN_PT_PLACEHOLDER_003', groupId: 'C_MOCK_GROUP_PT_0003', updatedAt: '2026-11-10 09:00:00', updatedBy: 'Demo Admin' },
+                { dept: 'สังคมสงเคราะห์', token: '', groupId: '', updatedAt: '', updatedBy: '' },
+                { dept: 'ก้าวใหม่พลัส', token: '', groupId: '', updatedAt: '', updatedBy: '' },
+                { dept: 'สุขภาพจิต', token: '', groupId: '', updatedAt: '', updatedBy: '' }
+            ];
+
+            function loadStore(key, fallback) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (raw) return JSON.parse(raw);
+                } catch (e) { }
+                const cloned = JSON.parse(JSON.stringify(fallback));
+                try { localStorage.setItem(key, JSON.stringify(cloned)); } catch (e) { }
+                return cloned;
+            }
+
+            function saveStore(key, data) {
+                try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) { }
+            }
+
+            function nowFormat() {
+                const d = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                return `${d.getFullYear() + 543}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            }
+
+            window.resetSentDmDemoData = function () {
+                saveStore(STORAGE_KEY_PATIENTS, DEFAULT_MOCK_PATIENTS);
+                saveStore(STORAGE_KEY_LOGS, DEFAULT_MOCK_LOGS);
+                saveStore(STORAGE_KEY_LINE_CFG, DEFAULT_MOCK_LINE_CONFIGS);
+            };
+
+            // สร้าง google.script.run Mock Object ให้ทำงานเหมือน Apps Script จริง
+            function createRunner() {
+                let successCb = () => { };
+                let failureCb = () => { };
+                const runner = {
+                    withSuccessHandler: function (cb) { successCb = cb; return runner; },
+                    withFailureHandler: function (cb) { failureCb = cb; return runner; },
+
+                    getPatients: function () {
+                        const list = loadStore(STORAGE_KEY_PATIENTS, DEFAULT_MOCK_PATIENTS);
+                        setTimeout(() => successCb(list), 150);
+                    },
+
+                    checkDMStatus: function (cid) {
+                        const cleanCid = String(cid || '').replace(/'/g, '').trim();
+                        const res = {
+                            qual: MOCK_DM_QUAL_CIDS.includes(cleanCid) ? 'ซ้ำ' : 'ใหม่',
+                            gen: MOCK_DM_GEN_CIDS.includes(cleanCid) ? 'ซ้ำ' : 'ใหม่'
+                        };
+                        setTimeout(() => successCb(res), 120);
+                    },
+
+                    savePatientData: function (formData) {
+                        const list = loadStore(STORAGE_KEY_PATIENTS, DEFAULT_MOCK_PATIENTS);
+                        const copy = JSON.parse(JSON.stringify(formData));
+                        const d = new Date();
+                        copy.Timestamp = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear() + 543}`;
+                        if (copy.CID && !String(copy.CID).startsWith("'")) copy.CID = "'" + copy.CID;
+                        if (copy.เบอร์โทร && !String(copy.เบอร์โทร).startsWith("'")) copy.เบอร์โทร = "'" + copy.เบอร์โทร;
+
+                        if (copy._rowIndex) {
+                            const idx = list.findIndex(p => p._rowIndex === copy._rowIndex);
+                            if (idx !== -1) {
+                                list[idx] = copy;
+                                saveStore(STORAGE_KEY_PATIENTS, list);
+                                setTimeout(() => successCb({ success: true, msg: 'อัปเดตข้อมูลเรียบร้อย (โหมด Demo)' }), 180);
+                                return;
+                            }
+                        }
+
+                        const newCidClean = String(copy.CID || '').replace(/'/g, '').trim();
+                        const dup = list.find(p => String(p.CID || '').replace(/'/g, '').trim() === newCidClean);
+                        if (dup) {
+                            setTimeout(() => successCb({ success: false, msg: 'มีรหัสบัตรประชาชนนี้ในระบบแล้ว กรุณาค้นหาเพื่อแก้ไข' }), 150);
+                            return;
+                        }
+
+                        copy._rowIndex = list.length + 2;
+                        list.push(copy);
+                        saveStore(STORAGE_KEY_PATIENTS, list);
+                        setTimeout(() => successCb({ success: true, msg: 'บันทึกข้อมูลใหม่เรียบร้อย (โหมด Demo)' }), 180);
+                    },
+
+                    getLineConfigs: function () {
+                        const cfgs = loadStore(STORAGE_KEY_LINE_CFG, DEFAULT_MOCK_LINE_CONFIGS);
+                        setTimeout(() => successCb(cfgs), 150);
+                    },
+
+                    saveLineConfigs: function (configs, updatedBy) {
+                        const nowStr = nowFormat();
+                        const updated = (configs || []).map(c => ({
+                            dept: c.dept,
+                            token: String(c.token || '').trim(),
+                            groupId: String(c.groupId || '').trim(),
+                            updatedAt: nowStr,
+                            updatedBy: updatedBy || 'Demo Admin'
+                        }));
+                        saveStore(STORAGE_KEY_LINE_CFG, updated);
+                        setTimeout(() => successCb({ success: true, msg: 'บันทึกการตั้งค่า LINE จำลองสำเร็จ' }), 180);
+                    },
+
+                    sendLineNotifyToDept: function (message, targetDept, metaData) {
+                        const cfgs = loadStore(STORAGE_KEY_LINE_CFG, DEFAULT_MOCK_LINE_CONFIGS);
+                        const cfg = cfgs.find(c => c.dept === targetDept);
+                        const logs = loadStore(STORAGE_KEY_LOGS, DEFAULT_MOCK_LOGS);
+                        const ok = Boolean(cfg && cfg.token && cfg.groupId);
+                        const status = ok ? 'สำเร็จ (DEMO)' : 'ล้มเหลว (ยังไม่ตั้งค่า LINE)';
+
+                        if (metaData) {
+                            logs.unshift({
+                                Timestamp: nowFormat(),
+                                ประเภท: metaData.type || 'ส่งต่อ',
+                                ครั้งที่: String(metaData.round || '-'),
+                                จากแผนก: metaData.fromDept || '-',
+                                ส่งถึงแผนก: targetDept,
+                                HN: metaData.hn || '-',
+                                'ชื่อ-นามสกุล': metaData.patientName || '-',
+                                CID: metaData.cid ? ("'" + String(metaData.cid).replace(/'/g, '')) : '-',
+                                ผู้ส่ง: metaData.sender || '-',
+                                'ข้อความ/ข้อมูลเพิ่มเติม': message,
+                                สถานะ: status
+                            });
+                            saveStore(STORAGE_KEY_LOGS, logs);
+                        }
+
+                        setTimeout(() => {
+                            if (ok) successCb({ success: true, msg: `[DEMO] จำลองการส่งแจ้งเตือน LINE ไปยังแผนก "${targetDept}" สำเร็จ (บันทึกในประวัติแล้ว)` });
+                            else successCb({ success: false, msg: `ยังไม่มีการตั้งค่า Mock Token หรือ Group ID สำหรับแผนก "${targetDept}" (ลองตั้งค่าได้ที่เมนู Admin)` });
+                        }, 200);
+                    },
+
+                    sendLineNotifyMultiDepts: function (message, targetDeptsArray, metaData) {
+                        const cfgs = loadStore(STORAGE_KEY_LINE_CFG, DEFAULT_MOCK_LINE_CONFIGS);
+                        const logs = loadStore(STORAGE_KEY_LOGS, DEFAULT_MOCK_LOGS);
+                        let successCount = 0;
+                        let skipped = [];
+
+                        (targetDeptsArray || []).forEach(dept => {
+                            const cfg = cfgs.find(c => c.dept === dept);
+                            const ok = Boolean(cfg && cfg.token && cfg.groupId);
+                            if (ok) successCount++; else skipped.push(dept);
+
+                            if (metaData) {
+                                logs.unshift({
+                                    Timestamp: nowFormat(),
+                                    ประเภท: metaData.type || 'ผลการเยี่ยม',
+                                    ครั้งที่: String(metaData.round || '-'),
+                                    จากแผนก: metaData.fromDept || '-',
+                                    ส่งถึงแผนก: dept,
+                                    HN: metaData.hn || '-',
+                                    'ชื่อ-นามสกุล': metaData.patientName || '-',
+                                    CID: metaData.cid ? ("'" + String(metaData.cid).replace(/'/g, '')) : '-',
+                                    ผู้ส่ง: metaData.sender || '-',
+                                    'ข้อความ/ข้อมูลเพิ่มเติม': message,
+                                    สถานะ: ok ? 'สำเร็จ (DEMO)' : 'ล้มเหลว (ยังไม่ตั้งค่า LINE)'
+                                });
+                            }
+                        });
+                        saveStore(STORAGE_KEY_LOGS, logs);
+
+                        setTimeout(() => {
+                            if (successCount > 0) {
+                                let msg = `[DEMO] จำลองส่งแจ้งเตือนสำเร็จ ${successCount} แผนก`;
+                                if (skipped.length > 0) msg += ` (ยังไม่ตั้งค่า LINE: ${skipped.join(', ')})`;
+                                successCb({ success: true, msg });
+                            } else {
+                                successCb({ success: false, msg: `ไม่สามารถส่งแจ้งเตือนได้ (ยังไม่ตั้งค่า LINE: ${skipped.join(', ')})` });
+                            }
+                        }, 200);
+                    },
+
+                    testSendLine: function (dept, message) {
+                        const testMsg = message || `[ข้อความทดสอบ DEMO]\n🔔 ทดสอบการเชื่อมต่อ LINE Messaging API\n🏥 แผนก: ${dept}`;
+                        this.sendLineNotifyToDept(testMsg, dept, {
+                            type: 'ทดสอบระบบ',
+                            round: '-',
+                            fromDept: 'Admin',
+                            hn: '-',
+                            patientName: '-',
+                            cid: '-',
+                            sender: 'Demo Admin'
+                        });
+                    },
+
+                    getLineLogs: function () {
+                        const logs = loadStore(STORAGE_KEY_LOGS, DEFAULT_MOCK_LOGS);
+                        setTimeout(() => successCb(logs), 150);
+                    },
+
+                    saveUserSSODepartment: function (key, name, dept, role) {
+                        setTimeout(() => successCb({ success: true, dept, role }), 100);
+                    }
+                };
+                return runner;
+            }
+
+            window.google = {
+                script: {
+                    get run() {
+                        return createRunner();
+                    }
+                }
+            };
+        })();
+    </script>
+</head>
+
+<body>
+
+    <div id="app" class="h-screen flex flex-col overflow-hidden">
+
+        <!-- DEMO BANNER -->
+        <div class="bg-amber-500 text-gray-900 text-xs font-semibold px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 z-40 shadow-sm flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="bg-gray-900 text-amber-300 px-2 py-0.5 rounded font-bold tracking-wide">DEMO MOCK-UP</span>
+                <span>Pro-Health Data BKK South — ระบบส่งต่อผู้ป่วยสหวิชาชีพ (SentDM) | ข้อมูลและรหัสทั้งหมดเป็นข้อมูลจำลอง</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button v-if="isLoggedIn" @click="quickSwitchRoleModal"
+                    class="bg-white/90 hover:bg-white text-gray-800 px-2.5 py-0.5 rounded shadow-sm transition font-bold">
+                    <i class="fa-solid fa-repeat mr-1"></i> สลับแผนก/บทบาททดสอบ
+                </button>
+                <button @click="resetAllDemoData"
+                    class="bg-gray-900/85 hover:bg-gray-900 text-white px-2.5 py-0.5 rounded shadow-sm transition">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> รีเซ็ตข้อมูลจำลอง
+                </button>
+            </div>
+        </div>
+
+        <!-- LOGIN PAGE (DEMO MOCK OF 21PASS SSO) -->
+        <div v-if="!isLoggedIn" class="flex-1 overflow-y-auto flex items-center justify-center bg-gray-100 p-4">
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-2xl">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+                        <i class="fa-solid fa-people-roof"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">
+                        ระบบส่งต่อผู้ป่วย สหวิชาชีพ (DM)
+                    </h2>
+                    <p class="text-xs text-gray-500 mt-1 mb-4">
+                        Multidisciplinary Referral System (6 Departments) — <b>เวอร์ชันสาธิต (Demo Mock-up)</b>
+                    </p>
+                </div>
+
+                <!-- Simulated Credential Login Form -->
+                <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5">
+                    <div class="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-key text-blue-600"></i>
+                        จำลองการเข้าสู่ระบบ (Mock 21PASS SSO Credentials)
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <input type="text" v-model="demoUsername" placeholder="Username จำลอง เช่น demo_opd" class="text-sm bg-white">
+                        <input type="password" v-model="demoPassword" placeholder="Password จำลอง (demo1234)" class="text-sm bg-white">
+                        <button @click="loginWithDemoForm"
+                            class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-bold text-sm transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบจำลอง
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-2">
+                        * หมายเหตุ: ชื่อผู้ใช้และรหัสผ่านด้านล่างเป็น <b>บัญชีจำลองสำหรับ Demo เท่านั้น</b> (ไม่ใช่ข้อมูลจริงจากระบบ Production / 21PASS SSO)
+                    </p>
+                </div>
+
+                <!-- One-Click Demo Role Cards -->
+                <div class="mb-4">
+                    <div class="text-xs font-bold text-gray-700 mb-2">เลือกเข้าสู่ระบบด่วนตามบทบาท (คลิกเพื่อ Audit หน้าจอ):</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button v-for="acc in demoAccounts" :key="acc.username" @click="loginAsMockAccount(acc)"
+                            class="p-2.5 rounded-xl border border-gray-200 hover:border-blue-400 hover:bg-blue-50/60 transition text-left flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white flex-shrink-0"
+                                    :class="acc.role === 'ADMIN' ? 'bg-gray-800' : getDeptInfo(acc.dept).bg">
+                                    <i class="fa-solid" :class="acc.role === 'ADMIN' ? 'fa-shield-halved' : getDeptInfo(acc.dept).icon"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-bold text-gray-800 truncate">{{ acc.displayName }}</div>
+                                    <div class="text-[11px] text-gray-500 font-mono truncate">{{ acc.username }} / {{ acc.password }}</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
+                                :class="acc.role === 'ADMIN' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' : getDeptBadgeClass(acc.dept)">
+                                {{ acc.role === 'ADMIN' ? 'ADMIN (' + acc.dept + ')' : acc.dept }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- First-Time SSO & Guest Login Buttons -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t">
+                    <button @click="simulateFirstTimeSSO"
+                        class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 py-2.5 px-4 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> จำลองเข้าใช้งานครั้งแรก (Popup เลือกแผนก)
+                    </button>
+                    <button @click="guestLogin"
+                        class="bg-gray-600 hover:bg-gray-700 text-white py-2.5 px-4 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-eye"></i> เข้าสู่ระบบแบบ ผู้เยี่ยมชม (Guest)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN APP (Logged In) -->
+        <div v-else class="flex flex-1 w-full relative overflow-hidden">
+
+            <!-- Overlay for mobile sidebar -->
+            <div v-if="showSidebar && isMobileMode" @click="showSidebar = false"
+                class="fixed inset-0 bg-black bg-opacity-50 z-20"></div>
+
+            <!-- Sidebar -->
+            <div
+                :class="['bg-gray-800 text-white flex-shrink-0 flex flex-col sidebar-transition fixed md:relative z-30 h-full overflow-hidden', showSidebar ? 'w-64 translate-x-0' : 'w-0 -translate-x-full']">
+                <div class="p-4 flex items-center justify-between border-b border-gray-700 min-w-[16rem]">
+                    <span class="font-bold text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-people-roof text-blue-400"></i> Refer system(DM)
+                    </span>
+                    <button @click="showSidebar = false" class="text-gray-300 hover:text-white md:hidden"><i
+                            class="fa-solid fa-times text-xl"></i></button>
+                </div>
+
+                <div class="p-4 min-w-[16rem] bg-gray-900/40">
+                    <p class="text-sm text-gray-400">ผู้ใช้: <span class="text-white font-medium">{{ user.displayName || user.username }}</span></p>
+                    <p class="text-sm text-gray-400 mt-1">แผนก:
+                        <span class="px-2 py-0.5 rounded text-xs font-bold" :class="getDeptBadgeClass(user.dept)">
+                            {{ user.dept }}
+                        </span>
+                    </p>
+                    <p v-if="isAdmin" class="text-xs text-yellow-400 font-bold mt-1">
+                        <i class="fa-solid fa-shield-halved"></i> ผู้ดูแลระบบ (Admin)
+                    </p>
+                </div>
+
+                <nav class="flex-1 p-4 space-y-2 min-w-[16rem] overflow-y-auto">
+                    <a href="#" v-if="user.role !== 'GUEST'" @click.prevent="changeView('list')"
+                        :class="{'bg-gray-700': currentView === 'list'}"
+                        class="block py-2 px-4 rounded hover:bg-gray-700 transition">
+                        <i class="fa-solid fa-users w-6"></i> ทะเบียนรายชื่อ
+                    </a>
+                    <a href="#" v-if="user.role !== 'GUEST'" @click.prevent="changeView('form')"
+                        :class="{'bg-gray-700': currentView === 'form'}"
+                        class="block py-2 px-4 rounded hover:bg-gray-700 transition">
+                        <i class="fa-solid fa-pen-to-square w-6"></i> บันทึกข้อมูล
+                    </a>
+                    <a href="#" v-if="user.role !== 'GUEST'" @click.prevent="changeView('pending')"
+                        :class="{'bg-gray-700': currentView === 'pending'}"
+                        class="block py-2 px-4 rounded hover:bg-gray-700 transition">
+                        <i class="fa-solid fa-clock-rotate-left w-6"></i> ผู้ป่วยที่รอผลการเยี่ยม
+                    </a>
+                    <a href="#" v-if="user.role !== 'GUEST'" @click.prevent="changeView('logs')"
+                        :class="{'bg-gray-700': currentView === 'logs'}"
+                        class="block py-2 px-4 rounded hover:bg-gray-700 transition">
+                        <i class="fa-solid fa-clipboard-list w-6"></i> รายงานการแจ้งเตือน
+                    </a>
+                    <a href="#" @click.prevent="changeView('dashboard')"
+                        :class="{'bg-gray-700': currentView === 'dashboard'}"
+                        class="block py-2 px-4 rounded hover:bg-gray-700 transition">
+                        <i class="fa-solid fa-chart-pie w-6"></i> สรุปข้อมูลการส่งต่อ
+                    </a>
+                    <!-- Admin Only Menu -->
+                    <a href="#" v-if="isAdmin" @click.prevent="changeView('lineConfig')"
+                        :class="{'bg-green-800 text-white': currentView === 'lineConfig'}"
+                        class="block py-2 px-4 rounded hover:bg-gray-700 text-green-400 font-semibold transition border border-green-600/30">
+                        <i class="fa-solid fa-gears w-6 text-green-400"></i> ตั้งค่า LINE แผนก
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-700 min-w-[16rem]">
+                    <button @click="logout"
+                        class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded transition font-medium">
+                        <i class="fa-solid fa-sign-out-alt"></i> ออกจากระบบ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col w-full bg-gray-50 h-full overflow-hidden min-w-0">
+                <!-- Topbar -->
+                <header class="bg-white shadow-sm h-14 flex items-center justify-between px-4 z-10 flex-shrink-0">
+                    <div class="flex items-center">
+                        <button @click="showSidebar = !showSidebar"
+                            class="text-gray-600 hover:text-gray-900 mr-3 transition-transform hover:scale-110">
+                            <i class="fa-solid fa-bars text-xl"></i>
+                        </button>
+                        <h1 class="font-bold text-gray-800 text-lg md:text-xl truncate">
+                            {{ viewTitle }}
+                        </h1>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="toggleMode"
+                            class="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-full text-gray-700 hidden md:block">
+                            <i :class="isMobileMode ? 'fa-solid fa-mobile-alt' : 'fa-solid fa-desktop'"></i> {{ isMobileMode ? 'โหมดมือถือ' : 'โหมดคอมฯ' }}
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Content Scrollable -->
+                <main class="flex-1 overflow-y-auto p-4 md:p-6 w-full max-w-7xl mx-auto">
+
+                    <!-- ======================= -->
+                    <!-- VIEW: PATIENT LIST      -->
+                    <!-- ======================= -->
+                    <div v-if="currentView === 'list'" class="bg-white rounded-lg shadow p-4">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                            <div class="w-full md:w-1/3 relative">
+                                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                                <input type="text" v-model="searchQuery"
+                                    placeholder="ค้นหา รหัสบัตรฯ, ชื่อ, นามสกุล, HN..."
+                                    class="pl-10 py-2 w-full border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+                            </div>
+                            <div class="flex gap-1.5 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                                <button @click="filterDept = 'ทั้งหมด'"
+                                    :class="filterDept === 'ทั้งหมด' ? 'bg-gray-800 text-white shadow' : 'bg-gray-200 text-gray-700'"
+                                    class="px-3 py-1.5 rounded-lg whitespace-nowrap text-xs font-semibold">ทั้งหมด</button>
+                                <button v-for="d in allDepartments" :key="'f_'+d"
+                                    @click="filterDept = d"
+                                    :class="filterDept === d ? (getDeptInfo(d).bg + ' text-white shadow') : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                    class="px-3 py-1.5 rounded-lg whitespace-nowrap text-xs font-semibold transition">
+                                    {{ d }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-lg border">
+                            <table class="min-w-full text-sm text-left">
+                                <thead class="bg-gray-100 text-gray-700">
+                                    <tr>
+                                        <th class="px-4 py-3 border-b">รหัสบัตรประชาชน</th>
+                                        <th class="px-4 py-3 border-b">HN</th>
+                                        <th class="px-4 py-3 border-b">ชื่อ - นามสกุล</th>
+                                        <th class="px-4 py-3 border-b">แผนกเจ้าของเคส</th>
+                                        <th class="px-4 py-3 border-b text-center">ส่งต่อ (ครั้ง)</th>
+                                        <th class="px-4 py-3 border-b text-center">เยี่ยม (ครั้ง)</th>
+                                        <th class="px-4 py-3 border-b text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="filteredPatients.length === 0">
+                                        <td colspan="7" class="text-center py-8 text-gray-500">ไม่พบข้อมูล</td>
+                                    </tr>
+                                    <tr v-for="p in filteredPatients" :key="p.CID" class="border-b hover:bg-gray-50">
+                                        <td class="px-4 py-3 font-mono">{{ String(p['CID']).replace(/'/g, '') }}</td>
+                                        <td class="px-4 py-3 font-mono">{{ p['HN'] }}</td>
+                                        <td class="px-4 py-3 font-medium">{{ p['ชื่อ'] }} {{ p['นามสกุล'] }}</td>
+                                        <td class="px-4 py-3">
+                                            <span :class="getDeptBadgeClass(p['แผนก'])"
+                                                class="px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1">
+                                                <i class="fa-solid" :class="getDeptInfo(p['แผนก']).icon"></i> {{ p['แผนก'] || '-' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center font-bold text-orange-500">{{ countReferrals(p) }}</td>
+                                        <td class="px-4 py-3 text-center font-bold text-purple-500">{{ countVisits(p) }}</td>
+                                        <td class="px-4 py-3 text-center">
+                                            <button @click="editPatient(String(p.CID).replace(/'/g, ''))"
+                                                class="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-2 rounded">
+                                                <i class="fa-solid fa-edit"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ======================= -->
+                    <!-- VIEW: DATA ENTRY FORM   -->
+                    <!-- ======================= -->
+                    <div v-if="currentView === 'form'" :class="formThemeClass"
+                        class="rounded-xl shadow-lg border-2 overflow-hidden transition-colors duration-300">
+
+                        <div class="p-4 text-white font-bold flex justify-between items-center"
+                            :class="getDeptInfo(form.แผนก).bg || 'bg-gray-800'">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-file-medical"></i> บันทึกข้อมูลผู้ป่วย
+                            </span>
+                            <span v-if="form.แผนก"
+                                class="bg-white text-gray-800 px-3 py-1 rounded-full text-xs shadow font-bold">
+                                ผู้ป่วยแผนก: {{ form.แผนก }}
+                            </span>
+                        </div>
+
+                        <div class="p-4 md:p-6 space-y-6">
+
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">ตรวจสอบ / ค้นหารหัสบัตรประชาชน 13 หลัก</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <input type="text" v-model="searchCid" maxlength="13"
+                                        placeholder="ระบุเลขบัตรประชาชน 13 หลัก (เช่น 1100100000001 หรือเลขใหม่)"
+                                        class="flex-1 min-w-[220px] font-mono text-lg tracking-widest text-center"
+                                        @keyup.enter="loadPatientByCid">
+                                    <button @click="loadPatientByCid"
+                                        class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700"><i
+                                            class="fa-solid fa-search"></i> ตรวจสอบ</button>
+                                    <button @click="resetForm"
+                                        class="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200"><i
+                                            class="fa-solid fa-rotate-left"></i> ล้าง</button>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-500 flex flex-wrap gap-1.5 items-center">
+                                    <span>ทดลองดึงด่วน:</span>
+                                    <button v-for="p in patients.slice(0, 4)" :key="'q_'+p.CID"
+                                        @click="editPatient(String(p.CID).replace(/'/g, ''))"
+                                        class="px-2 py-0.5 bg-gray-100 hover:bg-blue-100 text-gray-700 rounded border text-[11px] font-mono">
+                                        {{ String(p.CID).replace(/'/g, '') }} ({{ p.แผนก }})
+                                    </button>
+                                    <button @click="searchCid = '1100100000099'; loadPatientByCid();"
+                                        class="px-2 py-0.5 bg-green-50 hover:bg-green-100 text-green-700 rounded border border-green-200 text-[11px] font-semibold">
+                                        + สร้างเคสใหม่ (1100100000099)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Main Form Content -->
+                            <div v-if="form.CID" class="space-y-6">
+
+                                <!-- 1. General Info -->
+                                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800"><i
+                                            class="fa-solid fa-id-card text-primary"></i> ประวัติทั่วไป</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div><label class="text-xs text-gray-500">เลขบัตรประชาชน</label><input
+                                                type="text" v-model="form.CID" readonly></div>
+                                        <div><label class="text-xs text-gray-500">เลข HN <span v-if="form.HN_locked"
+                                                    class="text-red-500">(ล็อก)</span></label>
+                                            <input type="text" v-model="form.HN" :readonly="form.HN_locked"
+                                                :class="{'bg-gray-100 cursor-not-allowed text-gray-600': form.HN_locked}">
+                                        </div>
+                                        <div><label class="text-xs text-gray-500">ชื่อ</label><input type="text"
+                                                v-model="form.ชื่อ"></div>
+                                        <div><label class="text-xs text-gray-500">นามสกุล</label><input type="text"
+                                                v-model="form.นามสกุล"></div>
+                                        <div>
+                                            <label class="text-xs text-gray-500">ผู้ป่วยแผนก <span
+                                                    class="text-red-500">(ล็อกแผนกตามผู้สร้าง)</span></label>
+                                            <input type="text" v-model="form.แผนก" readonly
+                                                class="font-bold bg-gray-100 cursor-not-allowed">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="text-xs text-gray-500">วันเดือนปีเกิด (พ.ศ.)</label>
+                                                <thai-date v-model="form.วันเกิด" @change="calculateAge"
+                                                    placeholder="เลือกวันเกิด"></thai-date>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-500">อายุ (ปี)</label>
+                                                <input type="text" v-model="form.อายุ" readonly
+                                                    class="text-center font-bold text-blue-600 bg-gray-100">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Contact Info -->
+                                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800"><i
+                                            class="fa-solid fa-address-book text-primary"></i> การติดต่อ</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div class="md:col-span-2"><label
+                                                class="text-xs text-gray-500">ที่อยู่</label><textarea
+                                                v-model="form.ที่อยู่" rows="2"></textarea></div>
+                                        <div>
+                                            <label class="text-xs text-gray-500">เบอร์โทรศัพท์</label><input type="text"
+                                                v-model="form.เบอร์โทร" placeholder="เช่น 0810000000" maxlength="10">
+                                            <label class="text-xs text-gray-500 mt-2 block">ชุมชน</label><input
+                                                type="text" v-model="form.ชุมชน">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Medical History -->
+                                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800"><i
+                                            class="fa-solid fa-stethoscope text-primary"></i> ประวัติทางการแพทย์</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <div class="lg:col-span-2"><label
+                                                class="text-xs text-gray-500">โรคร่วม</label><input type="text"
+                                                v-model="form.โรคร่วม"></div>
+                                        <div><label class="text-xs text-gray-500">ส่วนสูง (cm)</label><input
+                                                type="number" v-model="form.ส่วนสูง"></div>
+                                        <div><label class="text-xs text-gray-500">น้ำหนัก (kg)</label><input
+                                                type="number" v-model="form.น้ำหนัก"></div>
+
+                                        <div><label class="text-xs text-gray-500">BP (เช่น 120/80)</label><input
+                                                type="text" v-model="form.BP" placeholder="xxx/xxx"></div>
+                                        <div><label class="text-xs text-gray-500">ผล BP</label><input type="text"
+                                                :value="calcBP" readonly :class="bpColorClass" class="text-center">
+                                        </div>
+
+                                        <div><label class="text-xs text-gray-500">DTX NPO</label><input type="number"
+                                                v-model="form.DTX_NPO"></div>
+                                        <div><label class="text-xs text-gray-500">ผล DTX NPO</label><input type="text"
+                                                :value="calcDtxNpo" readonly :class="dtxNpoColorClass"
+                                                class="text-center"></div>
+
+                                        <div><label class="text-xs text-gray-500">DTX หลังทานอาหาร</label><input
+                                                type="number" v-model="form.DTX_หลังอาหาร"></div>
+                                        <div><label class="text-xs text-gray-500">ผล DTX หลังทานอาหาร</label><input
+                                                type="text" :value="calcDtxPost" readonly :class="dtxPostColorClass"
+                                                class="text-center"></div>
+
+                                        <div><label class="text-xs text-gray-500">HbA1C (mg%)</label><input
+                                                type="number" step="0.1" v-model="form.HbA1C"></div>
+                                        <div><label class="text-xs text-gray-500">วันที่ตรวจเจอ (พ.ศ.)</label><thai-date
+                                                v-model="form.วันที่ตรวจเจอ"
+                                                placeholder="เลือกวันที่ตรวจเจอ"></thai-date></div>
+
+                                        <div class="lg:col-span-2"><label
+                                                class="text-xs text-gray-500">สาเหตุที่ส่ง</label><input type="text"
+                                                v-model="form.สาเหตุที่ส่ง"></div>
+                                        <div class="lg:col-span-2"><label class="text-xs text-gray-500">วันที่มาพบแพทย์
+                                                (กรณีเยี่ยมบ้านเจอ)</label><thai-date v-model="form.วันที่มาพบแพทย์"
+                                                placeholder="เลือกวันที่มาพบแพทย์"></thai-date></div>
+
+                                        <div class="lg:col-span-2 flex items-center gap-6 mt-2 p-2 bg-gray-50 rounded">
+                                            <label
+                                                class="flex items-center gap-2 font-bold cursor-pointer text-gray-700"><input
+                                                    type="checkbox" v-model="form.NG" class="checkbox-styled">
+                                                NG</label>
+                                            <label
+                                                class="flex items-center gap-2 font-bold cursor-pointer text-gray-700"><input
+                                                    type="checkbox" v-model="form.F_C" class="checkbox-styled">
+                                                F/C</label>
+                                        </div>
+                                        <div class="lg:col-span-2"><label class="text-xs text-gray-500">Lab
+                                                ประจำปี</label><input type="text" v-model="form.Labประจำปี"></div>
+                                    </div>
+
+                                    <!-- DM Status Checks -->
+                                    <div
+                                        class="mt-4 p-3 bg-gray-50 rounded border grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm">ทะเบียนคลินิกเบาหวานคุณภาพ:</span>
+                                            <span
+                                                :class="dmStatus.qual === 'ซ้ำ' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+                                                class="px-3 py-1 rounded-full text-sm font-bold">{{ dmStatus.qual
+                                                }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm">ทะเบียนคลินิกเบาหวานทั่วไป:</span>
+                                            <span
+                                                :class="dmStatus.gen === 'ซ้ำ' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+                                                class="px-3 py-1 rounded-full text-sm font-bold">{{ dmStatus.gen
+                                                }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Accordion Blocks (1-6) -->
+                                <div class="space-y-3">
+                                    <div v-for="i in 6" :key="i"
+                                        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                                        <button @click="toggleBlock(i)"
+                                            class="w-full p-4 text-left font-bold flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                                            <span><i class="fa-solid fa-list-check text-gray-500 mr-2"></i> ครั้งที่ {{ i }}</span>
+                                            <i :class="activeBlock === i ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
+                                        </button>
+
+                                        <div v-show="activeBlock === i" class="p-4 border-t space-y-4">
+
+                                            <!-- Referral Section (เฉพาะแผนกเจ้าของเคส) -->
+                                            <div v-if="user.dept === form.แผนก"
+                                                class="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                                                <h4 class="font-bold text-orange-800 mb-3 flex items-center gap-2">
+                                                    <i class="fa-solid fa-paper-plane"></i> แจ้งเตือนส่งต่อไปยังสหวิชาชีพ
+                                                </h4>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="text-xs text-gray-600">วันที่ส่งต่อ (พ.ศ.)</label>
+                                                        <thai-date v-model="form['ครั้งที่'+i+'_วันที่ส่งต่อ']"
+                                                            :placeholder="'เลือกวันที่ส่งต่อ'"></thai-date>
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-xs text-gray-600">ข้อมูลเพิ่มเติม</label>
+                                                        <textarea v-model="form['ครั้งที่'+i+'_ข้อมูลเพิ่มเติม']"
+                                                            rows="1" placeholder="ระบุเหตุผลหรือข้อมูลเพิ่มเติมในการส่งต่อ"></textarea>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-4 pt-3 border-t border-orange-200">
+                                                    <div class="text-xs text-orange-800 font-bold mb-2">
+                                                        <i class="fab fa-line"></i> เลือกแผนกที่ต้องการส่งการแจ้งเตือน LINE:
+                                                    </div>
+                                                    <div class="flex flex-wrap gap-2">
+                                                        <button v-for="targetDept in getOtherDepartments(user.dept)" :key="targetDept"
+                                                            @click="confirmLineNotify(targetDept, i)"
+                                                            :class="getDeptBtnClass(targetDept)"
+                                                            class="text-white px-3.5 py-2 rounded-lg text-xs md:text-sm font-bold shadow hover:opacity-90 transition flex items-center gap-1.5">
+                                                            <i class="fa-solid" :class="getDeptInfo(targetDept).icon"></i> ส่งไปยัง {{ targetDept }}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Visit Section -->
+                                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                                                <h4 class="font-bold text-purple-800 mb-3 flex items-center justify-between">
+                                                    <span><i class="fa-solid fa-house-medical"></i> ผลการเยี่ยม / การดูแลต่อเนื่อง</span>
+                                                    <span v-if="user.dept === form.แผนก"
+                                                        class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">ดูข้อมูลเท่านั้น (กรอกโดยแผนกปลายทาง)</span>
+                                                </h4>
+                                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div>
+                                                        <label class="text-xs text-gray-600">วันที่เยี่ยม (พ.ศ.)</label>
+                                                        <thai-date v-model="form['ครั้งที่'+i+'_วันที่เยี่ยม']"
+                                                            :placeholder="'เลือกวันที่เยี่ยมครั้งที่ ' + i"
+                                                            :disabled="user.dept === form.แผนก"></thai-date>
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-xs text-gray-600">กิจกรรมพยาบาล/การดูแล</label>
+                                                        <input type="text" v-model="form['ครั้งที่'+i+'_กิจกรรมพยาบาล']"
+                                                            :readonly="user.dept === form.แผนก">
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-xs text-gray-600">ผู้รายงาน</label>
+                                                        <input type="text" v-model="form['ครั้งที่'+i+'_ผู้รายงาน']"
+                                                            :readonly="user.dept === form.แผนก">
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-4 p-3 bg-white rounded border border-purple-100">
+                                                    <h5 class="text-sm font-bold text-gray-700 mb-3"><i
+                                                            class="fa-solid fa-clipboard-list text-purple-400"></i>
+                                                        ปัญหาและความต้องการ</h5>
+                                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                        <div class="flex items-center gap-2">
+                                                            <label
+                                                                class="flex items-center gap-1 cursor-pointer text-sm text-gray-600"><input
+                                                                    type="checkbox" class="checkbox-styled"
+                                                                    v-model="form['ครั้งที่'+i+'_ทำแผลต่อเนื่อง']"
+                                                                    :disabled="user.dept === form.แผนก">
+                                                                ทำแผลต่อเนื่อง</label>
+                                                        </div>
+                                                        <div class="md:col-span-2">
+                                                            <input v-if="form['ครั้งที่'+i+'_ทำแผลต่อเนื่อง']"
+                                                                type="text" v-model="form['ครั้งที่'+i+'_ระบุแผล']"
+                                                                placeholder="ระบุแผล..."
+                                                                class="text-sm p-1 border-b outline-none w-full"
+                                                                :readonly="user.dept === form.แผนก">
+                                                        </div>
+
+                                                        <div class="flex items-center gap-2"><label
+                                                                class="flex items-center gap-1 cursor-pointer text-sm text-gray-600"><input
+                                                                    type="checkbox" class="checkbox-styled"
+                                                                    v-model="form['ครั้งที่'+i+'_เปลี่ยนสาย_NG']"
+                                                                    :disabled="user.dept === form.แผนก"> เปลี่ยนสาย NG</label></div>
+                                                        <div class="flex items-center gap-2"><label
+                                                                class="flex items-center gap-1 cursor-pointer text-sm text-gray-600"><input
+                                                                    type="checkbox" class="checkbox-styled"
+                                                                    v-model="form['ครั้งที่'+i+'_เปลี่ยน_Foleys_cath']"
+                                                                    :disabled="user.dept === form.แผนก"> เปลี่ยน Foley's cath</label></div>
+                                                        <div class="flex items-center gap-2"><label
+                                                                class="flex items-center gap-1 cursor-pointer text-sm text-gray-600"><input
+                                                                    type="checkbox" class="checkbox-styled"
+                                                                    v-model="form['ครั้งที่'+i+'_ทำกายภาพ']"
+                                                                    :disabled="user.dept === form.แผนก"> ทำกายภาพ</label></div>
+                                                        <div class="flex items-center gap-2"><label
+                                                                class="flex items-center gap-1 cursor-pointer text-sm text-gray-600"><input
+                                                                    type="checkbox" class="checkbox-styled"
+                                                                    v-model="form['ครั้งที่'+i+'_สังคมสงเคราะห์']"
+                                                                    :disabled="user.dept === form.แผนก"> สังคมสงเคราะห์</label></div>
+                                                        <div class="flex items-center gap-2"><label
+                                                                class="flex items-center gap-1 cursor-pointer text-sm text-gray-600"><input
+                                                                    type="checkbox" class="checkbox-styled"
+                                                                    v-model="form['ครั้งที่'+i+'_เจาะเลือด']"
+                                                                    :disabled="user.dept === form.แผนก"> เจาะเลือด</label></div>
+
+                                                        <div class="flex items-center gap-2">
+                                                            <label
+                                                                class="flex items-center gap-1 cursor-pointer text-sm text-gray-600"><input
+                                                                    type="checkbox" class="checkbox-styled"
+                                                                    v-model="form['ครั้งที่'+i+'_อื่นๆ_เช็ค']"
+                                                                    :disabled="user.dept === form.แผนก"> อื่นๆ</label>
+                                                        </div>
+                                                        <div class="md:col-span-2">
+                                                            <input v-if="form['ครั้งที่'+i+'_อื่นๆ_เช็ค']" type="text"
+                                                                v-model="form['ครั้งที่'+i+'_อื่นๆ_ระบุ']"
+                                                                placeholder="ระบุความต้องการอื่นๆ..."
+                                                                class="text-sm p-1 border-b outline-none w-full"
+                                                                :readonly="user.dept === form.แผนก">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-3 text-right" v-if="user.dept !== form.แผนก">
+                                                    <button @click="confirmLineNotifyVisit(i)"
+                                                        class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 ml-auto">
+                                                        <i class="fab fa-line"></i> ส่งผลการเยี่ยมและแจ้งเตือน LINE
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Save Button -->
+                                <div class="pt-4 border-t flex justify-end gap-3 pb-8">
+                                    <button @click="changeView('list')"
+                                        class="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-bold">ยกเลิก</button>
+                                    <button @click="saveData"
+                                        class="px-8 py-3 btn-primary rounded-lg font-bold text-lg shadow-lg">
+                                        <i class="fa-solid fa-save"></i> บันทึกข้อมูล
+                                    </button>
+                                </div>
+
+                            </div>
+
+                            <div v-else class="text-center py-12 text-gray-400">
+                                <i class="fa-solid fa-id-card-clip text-6xl mb-4 opacity-50"></i>
+                                <p>กรุณาระบุเลขบัตรประชาชนเพื่อดึงข้อมูลหรือสร้างทะเบียนใหม่</p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ======================= -->
+                    <!-- VIEW: PENDING VISITS    -->
+                    <!-- ======================= -->
+                    <div v-if="currentView === 'pending'" class="bg-white rounded-lg shadow p-4">
+                        <h2 class="text-lg font-bold mb-4 text-orange-600 flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left"></i> ผู้ป่วยที่รอผลการเยี่ยม (ค้างส่งต่อ)
+                        </h2>
+                        <div class="overflow-x-auto rounded-lg border">
+                            <table class="min-w-full text-sm text-left">
+                                <thead class="bg-orange-50 text-orange-800">
+                                    <tr>
+                                        <th class="px-4 py-3 border-b">รหัสบัตรประชาชน</th>
+                                        <th class="px-4 py-3 border-b">ชื่อ - นามสกุล</th>
+                                        <th class="px-4 py-3 border-b">แผนกผู้ป่วย</th>
+                                        <th class="px-4 py-3 border-b text-center">ส่งต่อครั้งล่าสุด</th>
+                                        <th class="px-4 py-3 border-b">วันที่ส่งต่อ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="pendingVisits.length === 0">
+                                        <td colspan="5" class="text-center py-8 text-gray-500">ไม่มีข้อมูลค้างส่งต่อ</td>
+                                    </tr>
+                                    <tr v-for="p in pendingVisits" :key="p.CID" class="border-b hover:bg-orange-50/50">
+                                        <td class="px-4 py-3 font-mono">{{ String(p.CID).replace(/'/g, '') }}</td>
+                                        <td class="px-4 py-3 font-medium">{{ p.ชื่อ }} {{ p.นามสกุล }}</td>
+                                        <td class="px-4 py-3">
+                                            <span :class="getDeptBadgeClass(p.แผนก)" class="px-2 py-0.5 rounded text-xs font-bold">
+                                                {{ p.แผนก }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 font-bold text-orange-600 text-center">ครั้งที่ {{ p.pendingRound }}</td>
+                                        <td class="px-4 py-3">{{ p.pendingDate }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ======================= -->
+                    <!-- VIEW: DASHBOARD         -->
+                    <!-- ======================= -->
+                    <div v-if="currentView === 'dashboard'" class="bg-white rounded-lg shadow p-4 space-y-6">
+                        <h2 class="text-lg font-bold text-gray-800 border-b pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-blue-500"></i> สรุปข้อมูลการส่งต่อ (Dashboard)
+                        </h2>
+
+                        <div class="flex flex-col md:flex-row gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="flex-1">
+                                <label class="block text-sm font-bold text-gray-700 mb-1"><i
+                                        class="fa-regular fa-calendar"></i> ตั้งแต่วันที่</label>
+                                <thai-date v-model="dashFilter.dateFrom" placeholder="เลือกวันเริ่มต้น"></thai-date>
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm font-bold text-gray-700 mb-1"><i
+                                        class="fa-regular fa-calendar"></i> ถึงวันที่</label>
+                                <thai-date v-model="dashFilter.dateTo" placeholder="เลือกวันสิ้นสุด"></thai-date>
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm font-bold text-gray-700 mb-1"><i
+                                        class="fa-solid fa-building-user"></i> แผนกผู้ป่วย</label>
+                                <select v-model="dashFilter.dept"
+                                    class="w-full border border-gray-300 p-2 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-400">
+                                    <option value="ทั้งหมด">ทั้งหมด (ทุกแผนก)</option>
+                                    <option v-for="d in allDepartments" :key="'dash_'+d" :value="d">{{ d }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-xl shadow-sm border border-blue-200 hover:shadow-md transition">
+                                <h3 class="text-blue-800 font-bold mb-2">จำนวนผู้ป่วยทั้งหมด</h3>
+                                <p class="text-4xl font-black text-blue-600">{{ dashboardStats.totalPatients }} <span
+                                        class="text-base font-normal">คน</span></p>
+                                <div class="mt-3 grid grid-cols-2 gap-1 text-xs font-semibold border-t border-blue-200 pt-2 text-gray-600">
+                                    <div v-for="d in allDepartments" :key="'stat_card_'+d">
+                                        {{ d }}: <span class="font-bold text-blue-700">{{ dashboardStats.patientsByDept[d] || 0 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-xl shadow-sm border border-orange-200 hover:shadow-md transition">
+                                <h3 class="text-orange-800 font-bold mb-2">จำนวนการส่งต่อทั้งหมด</h3>
+                                <p class="text-4xl font-black text-orange-600">{{ dashboardStats.totalReferrals }} <span
+                                        class="text-base font-normal">ครั้ง</span></p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-xl shadow-sm border border-purple-200 hover:shadow-md transition">
+                                <h3 class="text-purple-800 font-bold mb-2">จำนวนการเยี่ยมทั้งหมด</h3>
+                                <p class="text-4xl font-black text-purple-600">{{ dashboardStats.totalVisits }} <span
+                                        class="text-base font-normal">ครั้ง</span></p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 mt-4">
+                            <div class="bg-white rounded-xl border border-purple-100 shadow-sm p-5">
+                                <h3 class="font-bold text-purple-600 mb-4 border-b border-purple-100 pb-2"><i
+                                        class="fa-solid fa-house-medical"></i> จำนวนการเยี่ยมแยกตามครั้ง</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-6 gap-3 text-center">
+                                    <div v-for="i in 6" :key="'vis'+i"
+                                        class="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                                        <div class="text-xs font-bold text-purple-800 mb-1">ครั้งที่ {{i}}</div>
+                                        <div class="font-black text-2xl text-purple-500">{{
+                                            dashboardStats.visitsByRound[i] }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ======================= -->
+                    <!-- VIEW: NOTIFICATION LOGS -->
+                    <!-- ======================= -->
+                    <div v-if="currentView === 'logs'" class="bg-white rounded-lg shadow p-4 space-y-4">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div class="w-full md:w-1/3 relative">
+                                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                                <input type="text" v-model="logSearchQuery"
+                                    placeholder="ค้นหา HN, ชื่อผู้ป่วย, ผู้ส่ง, แผนก..."
+                                    class="pl-10 py-2 w-full border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none text-sm">
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                <select v-model="logFilterType" class="text-xs py-2 px-3 border rounded-lg bg-gray-50 outline-none w-auto">
+                                    <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>
+                                    <option value="ส่งต่อ">เฉพาะการส่งต่อ</option>
+                                    <option value="ผลการเยี่ยม">เฉพาะผลการเยี่ยม</option>
+                                    <option value="ทดสอบระบบ">ทดสอบระบบ</option>
+                                </select>
+
+                                <button @click="fetchLineLogs" :disabled="loadingLogs"
+                                    class="px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                                    <i class="fa-solid fa-rotate" :class="{'animate-spin': loadingLogs}"></i> รีเฟรช
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-1.5 w-full overflow-x-auto pb-1">
+                            <button @click="logFilterDept = 'ทั้งหมด'"
+                                :class="logFilterDept === 'ทั้งหมด' ? 'bg-gray-800 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                class="px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition">
+                                ทั้งหมด
+                            </button>
+                            <button v-for="d in allDepartments" :key="'log-dept-'+d" @click="logFilterDept = d"
+                                :class="logFilterDept === d ? (getDeptInfo(d).bg + ' text-white font-bold shadow') : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                class="px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition flex items-center gap-1.5">
+                                <i class="fa-solid" :class="getDeptInfo(d).icon"></i> แผนก {{ d }}
+                            </button>
+                        </div>
+
+                        <div v-if="loadingLogs" class="text-center py-12 text-gray-500">
+                            <i class="fa-solid fa-spinner fa-spin text-3xl mb-2 text-blue-500"></i>
+                            <p class="text-sm">กำลังโหลดข้อมูลประวัติการแจ้งเตือน...</p>
+                        </div>
+
+                        <div v-else class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-gray-600">
+                                <thead class="bg-gray-50 text-xs uppercase text-gray-500 border-b">
+                                    <tr>
+                                        <th class="px-4 py-3 whitespace-nowrap">วันเวลา</th>
+                                        <th class="px-4 py-3 whitespace-nowrap">ประเภท</th>
+                                        <th class="px-4 py-3 whitespace-nowrap text-center">ครั้งที่</th>
+                                        <th class="px-4 py-3 whitespace-nowrap">เส้นทางแจ้งเตือน</th>
+                                        <th class="px-4 py-3 whitespace-nowrap">ผู้ป่วย</th>
+                                        <th class="px-4 py-3 whitespace-nowrap">ผู้ส่ง</th>
+                                        <th class="px-4 py-3 whitespace-nowrap">สถานะ</th>
+                                        <th class="px-4 py-3 text-center whitespace-nowrap">รายละเอียด</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="filteredLogs.length === 0">
+                                        <td colspan="8" class="text-center py-8 text-gray-400">
+                                            <i class="fa-solid fa-inbox text-3xl mb-2 block"></i>
+                                            ยังไม่มีประวัติการส่งแจ้งเตือน LINE
+                                        </td>
+                                    </tr>
+                                    <tr v-for="(log, idx) in filteredLogs" :key="'log-'+idx" class="border-b hover:bg-gray-50">
+                                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-500 font-mono">{{ log['Timestamp'] }}</td>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <span :class="log['ประเภท'] === 'ส่งต่อ' ? 'bg-orange-100 text-orange-700 border-orange-200' : (log['ประเภท'] === 'ผลการเยี่ยม' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-700 border-gray-200')"
+                                                class="px-2 py-0.5 rounded text-xs font-bold border">
+                                                {{ log['ประเภท'] }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-xs font-bold text-center">
+                                            {{ log['ครั้งที่'] !== '-' ? ('ครั้งที่ ' + log['ครั้งที่']) : '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-xs">
+                                            <div class="flex items-center gap-1">
+                                                <span class="px-1.5 py-0.5 rounded text-xs font-bold" :class="getDeptBadgeClass(log['จากแผนก'])">{{ log['จากแผนก'] }}</span>
+                                                <i class="fa-solid fa-arrow-right text-gray-400 text-xs"></i>
+                                                <span class="px-1.5 py-0.5 rounded text-xs font-bold" :class="getDeptBadgeClass(log['ส่งถึงแผนก'])">{{ log['ส่งถึงแผนก'] }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-xs">
+                                            <div class="font-bold text-gray-800">{{ log['ชื่อ-นามสกุล'] }}</div>
+                                            <div class="text-gray-400 font-mono">HN: {{ log['HN'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-xs text-gray-600">{{ log['ผู้ส่ง'] }}</td>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <span v-if="String(log['สถานะ']).includes('สำเร็จ')" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">
+                                                <i class="fa-solid fa-check-circle mr-0.5"></i> {{ log['สถานะ'] }}
+                                            </span>
+                                            <span v-else class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold">
+                                                <i class="fa-solid fa-circle-exclamation mr-0.5"></i> {{ log['สถานะ'] }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                                            <button @click="showLogDetail(log)"
+                                                class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 text-xs font-bold flex items-center gap-1 mx-auto">
+                                                <i class="fa-solid fa-file-lines"></i> ดูข้อความ
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ===================================== -->
+                    <!-- VIEW: ADMIN LINE CONFIGURATION        -->
+                    <!-- ===================================== -->
+                    <div v-if="currentView === 'lineConfig'" class="space-y-6">
+                        <div class="bg-white rounded-xl shadow-md p-6">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 mb-6 gap-4">
+                                <div>
+                                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-gears text-green-600"></i> ตั้งค่า LINE Messaging API สำหรับ 6 แผนก (Mock Config)
+                                    </h2>
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        กำหนดค่าจำลอง Channel Access Token และ Group ID ของแต่ละแผนก (ระบบ Demo จะไม่ส่งออกอินเทอร์เน็ตจริง)
+                                    </p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="fetchLineConfigs" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold flex items-center gap-2">
+                                        <i class="fa-solid fa-rotate"></i> โหลดใหม่
+                                    </button>
+                                    <button @click="saveLineConfigsData" :disabled="savingLineConfigs" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold shadow flex items-center gap-2">
+                                        <i class="fa-solid fa-save"></i> {{ savingLineConfigs ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า' }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div v-if="loadingLineConfigs" class="text-center py-12 text-gray-500">
+                                <i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-blue-500"></i>
+                                <p>กำลังโหลดการตั้งค่า LINE จำลอง...</p>
+                            </div>
+
+                            <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div v-for="item in lineConfigsList" :key="item.dept"
+                                    class="border rounded-xl p-5 shadow-sm hover:shadow-md transition bg-gray-50/80">
+                                    <div class="flex items-center justify-between mb-4 pb-2 border-b">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white" :class="getDeptInfo(item.dept).bg">
+                                                <i class="fa-solid" :class="getDeptInfo(item.dept).icon"></i>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-bold text-gray-800 text-base">แผนก {{ item.dept }}</h3>
+                                                <span v-if="item.updatedAt" class="text-xs text-gray-400">อัปเดต: {{ item.updatedAt }} ({{ item.updatedBy || 'System' }})</span>
+                                                <span v-else class="text-xs text-gray-400">ยังไม่ได้ตั้งค่า</span>
+                                            </div>
+                                        </div>
+                                        <button @click="testLineMessage(item.dept)"
+                                            class="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                                            <i class="fab fa-line text-green-500"></i> ทดสอบส่ง
+                                        </button>
+                                    </div>
+
+                                    <div class="space-y-3 text-sm">
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-700 mb-1">
+                                                Channel Access Token (Mock Placeholder)
+                                            </label>
+                                            <input type="text" v-model="item.token" placeholder="ใส่ Token จำลอง เช่น MOCK_LINE_TOKEN_XXXX"
+                                                class="w-full font-mono text-xs bg-white">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-700 mb-1">
+                                                Group ID (Mock Group ID)
+                                            </label>
+                                            <input type="text" v-model="item.groupId" placeholder="เช่น C_MOCK_GROUP_XXXX"
+                                                class="w-full font-mono text-xs bg-white">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-8 pt-4 border-t flex justify-end">
+                                <button @click="saveLineConfigsData" :disabled="savingLineConfigs" class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-base font-bold shadow-lg flex items-center gap-2">
+                                    <i class="fa-solid fa-save"></i> {{ savingLineConfigs ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่าทั้งหมด' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        const ThaiDatePicker = {
+            props: ['modelValue', 'placeholder', 'disabled'],
+            template: '<input type="text" ref="input" :value="modelValue" :disabled="disabled" :placeholder="placeholder || \'เลือกวันที่\'" :class="{\'bg-gray-100 cursor-not-allowed pointer-events-none\': disabled, \'bg-white cursor-pointer hover:bg-gray-50\': !disabled}" class="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400 transition-colors" readonly>',
+            mounted() {
+                this.fp = flatpickr(this.$refs.input, {
+                    locale: "th",
+                    dateFormat: "d/m/Y",
+                    disableMobile: true,
+                    onChange: (selectedDates) => {
+                        if (selectedDates.length > 0) {
+                            let d = selectedDates[0];
+                            let thYear = d.getFullYear() + 543;
+                            let dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + thYear;
+                            this.$emit('update:modelValue', dateStr);
+                            this.$emit('change');
+                            this.$refs.input.value = dateStr;
+                        } else {
+                            this.$emit('update:modelValue', '');
+                            this.$emit('change');
+                        }
+                    },
+                    onReady: function (selectedDates, dateStr, instance) {
+                        if (instance.currentYearElement) instance.currentYearElement.value = instance.currentYear + 543;
+                    },
+                    onYearChange: function (selectedDates, dateStr, instance) {
+                        if (instance.currentYearElement) instance.currentYearElement.value = instance.currentYear + 543;
+                    },
+                    onMonthChange: function (selectedDates, dateStr, instance) {
+                        if (instance.currentYearElement) instance.currentYearElement.value = instance.currentYear + 543;
+                    }
+                });
+
+                if (this.modelValue) {
+                    this.$refs.input.value = this.modelValue;
+                    let parts = String(this.modelValue).split('/');
+                    if (parts.length === 3) {
+                        let d = parseInt(parts[0]);
+                        let m = parseInt(parts[1]) - 1;
+                        let y = parseInt(parts[2]) - 543;
+                        this.fp.setDate(new Date(y, m, d), false);
+                        this.$refs.input.value = this.modelValue;
+                    }
+                }
+            },
+            watch: {
+                modelValue(newVal) {
+                    if (!newVal) this.fp.clear();
+                    else this.$refs.input.value = newVal;
+                }
+            },
+            unmounted() {
+                if (this.fp) this.fp.destroy();
+            }
+        };
+
+        const DEMO_ACCOUNTS = [
+            { username: 'demo_admin', password: 'demo_admin_pw', displayName: 'ผู้ดูแลระบบกลาง (จำลอง)', dept: 'OPD', role: 'ADMIN' },
+            { username: 'demo_opd', password: 'demo1234', displayName: 'พยาบาล OPD (จำลอง)', dept: 'OPD', role: 'USER' },
+            { username: 'demo_home', password: 'demo1234', displayName: 'พยาบาลเยี่ยมบ้าน (จำลอง)', dept: 'เยี่ยมบ้าน', role: 'USER' },
+            { username: 'demo_pt', password: 'demo1234', displayName: 'นักกายภาพบำบัด (จำลอง)', dept: 'กายภาพบำบัด', role: 'USER' },
+            { username: 'demo_social', password: 'demo1234', displayName: 'นักสังคมสงเคราะห์ (จำลอง)', dept: 'สังคมสงเคราะห์', role: 'USER' },
+            { username: 'demo_kaomai', password: 'demo1234', displayName: 'จนท.ก้าวใหม่พลัส (จำลอง)', dept: 'ก้าวใหม่พลัส', role: 'USER' },
+            { username: 'demo_mental', password: 'demo1234', displayName: 'จนท.สุขภาพจิต (จำลอง)', dept: 'สุขภาพจิต', role: 'USER' }
+        ];
+
+        const app = createApp({
+            data() {
+                return {
+                    isLoggedIn: false,
+                    demoUsername: 'demo_opd',
+                    demoPassword: 'demo1234',
+                    demoAccounts: DEMO_ACCOUNTS,
+                    user: { role: '', dept: '', username: '', displayName: '', isGuest: false },
+
+                    allDepartments: ["OPD", "เยี่ยมบ้าน", "กายภาพบำบัด", "สังคมสงเคราะห์", "ก้าวใหม่พลัส", "สุขภาพจิต"],
+
+                    showSidebar: true,
+                    isMobileMode: false,
+                    currentView: 'list',
+
+                    patients: [],
+                    searchQuery: '',
+                    filterDept: 'ทั้งหมด',
+
+                    searchCid: '',
+                    form: {},
+                    dmStatus: { qual: '-', gen: '-' },
+                    activeBlock: 1,
+
+                    dashFilter: { dateFrom: '', dateTo: '', dept: 'ทั้งหมด' },
+
+                    lineConfigsList: [],
+                    loadingLineConfigs: false,
+                    savingLineConfigs: false,
+
+                    lineLogs: [],
+                    loadingLogs: false,
+                    logSearchQuery: '',
+                    logFilterDept: 'ทั้งหมด',
+                    logFilterType: 'ทั้งหมด'
+                }
+            },
+            computed: {
+                isAdmin() {
+                    return this.user && (String(this.user.role).toUpperCase() === 'ADMIN');
+                },
+                viewTitle() {
+                    if (this.currentView === 'list') return 'ทะเบียนรายชื่อผู้ป่วย';
+                    if (this.currentView === 'form') return 'บันทึก/แก้ไข ข้อมูลการส่งต่อ';
+                    if (this.currentView === 'pending') return 'ผู้ป่วยที่รอผลการเยี่ยม (ค้างส่งต่อ)';
+                    if (this.currentView === 'logs') return 'รายงานประวัติการแจ้งเตือน LINE';
+                    if (this.currentView === 'dashboard') return 'สรุปข้อมูลการส่งต่อ';
+                    if (this.currentView === 'lineConfig') return 'ตั้งค่า LINE Messaging API แผนก';
+                    return '';
+                },
+                filteredLogs() {
+                    return this.lineLogs.filter(log => {
+                        if (this.logFilterDept !== 'ทั้งหมด' && log['จากแผนก'] !== this.logFilterDept && log['ส่งถึงแผนก'] !== this.logFilterDept) return false;
+                        if (this.logFilterType !== 'ทั้งหมด' && log['ประเภท'] !== this.logFilterType) return false;
+                        if (this.logSearchQuery) {
+                            const q = this.logSearchQuery.toLowerCase();
+                            return (String(log['HN']).toLowerCase().includes(q) ||
+                                String(log['ชื่อ-นามสกุล']).toLowerCase().includes(q) ||
+                                String(log['CID']).includes(q) ||
+                                String(log['ผู้ส่ง']).toLowerCase().includes(q) ||
+                                String(log['จากแผนก']).toLowerCase().includes(q) ||
+                                String(log['ส่งถึงแผนก']).toLowerCase().includes(q));
+                        }
+                        return true;
+                    });
+                },
+                filteredPatients() {
+                    return this.patients.filter(p => {
+                        if (this.filterDept !== 'ทั้งหมด' && p['แผนก'] !== this.filterDept) return false;
+                        if (this.searchQuery) {
+                            const q = this.searchQuery.toLowerCase();
+                            return (String(p['CID']).replace(/'/g, '').includes(q) ||
+                                String(p['HN']).toLowerCase().includes(q) ||
+                                String(p['ชื่อ']).toLowerCase().includes(q) ||
+                                String(p['นามสกุล']).toLowerCase().includes(q));
+                        }
+                        return true;
+                    });
+                },
+                formThemeClass() {
+                    if (!this.form.แผนก) return 'theme-default';
+                    if (this.form.แผนก === 'OPD') return 'theme-opd';
+                    if (this.form.แผนก === 'เยี่ยมบ้าน') return 'theme-home';
+                    if (this.form.แผนก === 'กายภาพบำบัด') return 'theme-pt';
+                    if (this.form.แผนก === 'สังคมสงเคราะห์') return 'theme-social';
+                    if (this.form.แผนก === 'ก้าวใหม่พลัส') return 'theme-kaomai';
+                    if (this.form.แผนก === 'สุขภาพจิต') return 'theme-mental';
+                    return 'theme-default';
+                },
+                calcBP() {
+                    if (!this.form.BP) return '';
+                    const parts = String(this.form.BP).split('/');
+                    if (parts.length !== 2) return 'รูปแบบไม่ถูกต้อง';
+                    const sys = parseInt(parts[0]);
+                    const dia = parseInt(parts[1]);
+                    if (isNaN(sys) || isNaN(dia)) return '';
+
+                    let sysScore = 0;
+                    if (sys >= 180) sysScore = 4;
+                    else if (sys >= 140) sysScore = 3;
+                    else if (sys >= 131) sysScore = 2;
+                    else if (sys >= 121) sysScore = 1;
+
+                    let diaScore = 0;
+                    if (dia >= 110) diaScore = 4;
+                    else if (dia >= 90) diaScore = 3;
+                    else if (dia >= 85) diaScore = 2;
+                    else if (dia >= 81) diaScore = 1;
+
+                    const finalScore = Math.max(sysScore, diaScore);
+
+                    if (finalScore === 4) return 'ควรพบแพทย์ทันที';
+                    if (finalScore === 3) return 'Stage2';
+                    if (finalScore === 2) return 'Stage1';
+                    if (finalScore === 1) return 'PreHT';
+                    return 'ปกติ';
+                },
+                bpColorClass() {
+                    const res = this.calcBP;
+                    if (res === 'ปกติ') return 'bg-green-100 text-green-800 font-bold';
+                    if (res === 'PreHT') return 'bg-yellow-100 text-yellow-800 font-bold';
+                    if (res === 'Stage1') return 'bg-orange-100 text-orange-800 font-bold';
+                    if (res === 'Stage2') return 'bg-red-100 text-red-800 font-bold';
+                    if (res === 'ควรพบแพทย์ทันที') return 'bg-red-600 text-white font-bold';
+                    return 'bg-gray-100 text-gray-500';
+                },
+                calcDtxNpo() {
+                    const v = parseFloat(this.form.DTX_NPO);
+                    if (isNaN(v)) return '';
+                    if (v < 100) return 'ปกติ';
+                    if (v >= 101 && v <= 125) return 'IFG';
+                    if (v > 125) return 'DM';
+                    return '';
+                },
+                dtxNpoColorClass() {
+                    const res = this.calcDtxNpo;
+                    if (res === 'ปกติ') return 'text-green-600 font-bold';
+                    if (res === 'IFG') return 'text-orange-600 font-bold';
+                    if (res === 'DM') return 'text-red-600 font-bold';
+                    return '';
+                },
+                calcDtxPost() {
+                    const v = parseFloat(this.form.DTX_หลังอาหาร);
+                    if (isNaN(v)) return '';
+                    if (v < 140) return 'ปกติ';
+                    if (v >= 141 && v <= 199) return 'IFG';
+                    if (v > 199) return 'DM';
+                    return '';
+                },
+                dtxPostColorClass() {
+                    const res = this.calcDtxPost;
+                    if (res === 'ปกติ') return 'text-green-600 font-bold';
+                    if (res === 'IFG') return 'text-orange-600 font-bold';
+                    if (res === 'DM') return 'text-red-600 font-bold';
+                    return '';
+                },
+                pendingVisits() {
+                    let pending = [];
+                    this.patients.forEach(p => {
+                        for (let i = 6; i >= 1; i--) {
+                            let refDate = p[`ครั้งที่${i}_วันที่ส่งต่อ`];
+                            let visitDate = p[`ครั้งที่${i}_วันที่เยี่ยม`];
+                            if (refDate && !visitDate) {
+                                pending.push({ ...p, pendingRound: i, pendingDate: refDate });
+                                break;
+                            }
+                        }
+                    });
+                    return pending;
+                },
+                dashboardStats() {
+                    let stats = {
+                        totalPatients: 0,
+                        patientsByDept: {},
+                        totalReferrals: 0,
+                        totalVisits: 0,
+                        referralsByRound: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+                        visitsByRound: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
+                    };
+
+                    this.allDepartments.forEach(d => { stats.patientsByDept[d] = 0; });
+
+                    const parseDateToMs = (str) => {
+                        if (!str) return null;
+                        let p = String(str).split('/');
+                        if (p.length !== 3) return null;
+                        return new Date(parseInt(p[2]) - 543, parseInt(p[1]) - 1, parseInt(p[0])).getTime();
+                    };
+
+                    let fromTime = parseDateToMs(this.dashFilter.dateFrom) || 0;
+                    let toTime = parseDateToMs(this.dashFilter.dateTo) || Infinity;
+                    if (toTime !== Infinity) toTime += (24 * 60 * 60 * 1000) - 1;
+
+                    this.patients.forEach(p => {
+                        if (this.dashFilter.dept !== 'ทั้งหมด' && p['แผนก'] !== this.dashFilter.dept) return;
+
+                        let pTime = parseDateToMs(p['Timestamp']);
+                        let isPatientInDate = true;
+                        if (fromTime !== 0 || toTime !== Infinity) {
+                            if (!pTime || pTime < fromTime || pTime > toTime) isPatientInDate = false;
+                        }
+
+                        if (isPatientInDate) {
+                            stats.totalPatients++;
+                            let d = p['แผนก'] || 'OPD';
+                            stats.patientsByDept[d] = (stats.patientsByDept[d] || 0) + 1;
+                        }
+
+                        for (let i = 1; i <= 6; i++) {
+                            let rDate = p[`ครั้งที่${i}_วันที่ส่งต่อ`];
+                            if (rDate) {
+                                let rTime = parseDateToMs(rDate);
+                                if (rTime && rTime >= fromTime && rTime <= toTime) {
+                                    stats.totalReferrals++;
+                                    stats.referralsByRound[i]++;
+                                }
+                            }
+
+                            let vDate = p[`ครั้งที่${i}_วันที่เยี่ยม`];
+                            if (vDate) {
+                                let vTime = parseDateToMs(vDate);
+                                if (vTime && vTime >= fromTime && vTime <= toTime) {
+                                    stats.totalVisits++;
+                                    stats.visitsByRound[i]++;
+                                }
+                            }
+                        }
+                    });
+
+                    return stats;
+                }
+            },
+            methods: {
+                loginWithDemoForm() {
+                    const u = String(this.demoUsername || '').trim();
+                    const p = String(this.demoPassword || '').trim();
+                    const found = this.demoAccounts.find(a => a.username === u && a.password === p);
+                    if (!found) {
+                        Swal.fire('ไม่พบข้อมูลบัญชีจำลอง', 'กรุณาใช้บัญชีทดสอบที่แสดงด้านล่าง หรือคลิกปุ่มเข้าสู่ระบบด่วน', 'warning');
+                        return;
+                    }
+                    this.loginAsMockAccount(found);
+                },
+                loginAsMockAccount(acc) {
+                    const userObj = {
+                        username: acc.username,
+                        displayName: acc.displayName,
+                        dept: acc.dept,
+                        role: acc.role,
+                        isGuest: false
+                    };
+                    localStorage.setItem('sentdm_demo_user_session', JSON.stringify(userObj));
+                    this.applyUserDepartmentAndRole(userObj);
+                },
+                simulateFirstTimeSSO() {
+                    const rawUser = {
+                        username: 'demo_new_staff',
+                        displayName: 'เจ้าหน้าที่ใหม่ (จำลองเข้าครั้งแรก)',
+                        role: 'USER',
+                        dept: ''
+                    };
+                    this.promptFirstTimeDepartmentSelection(rawUser, rawUser.username);
+                },
+                quickSwitchRoleModal() {
+                    let buttonsHtml = '<div class="grid grid-cols-1 gap-2 text-left my-2">';
+                    this.demoAccounts.forEach((acc, idx) => {
+                        buttonsHtml += `<button type="button" onclick="window.demoSwitchAcc(${idx})" class="p-2.5 rounded-lg border hover:bg-blue-50 hover:border-blue-400 flex items-center justify-between text-xs w-full">
+                            <span><b>${acc.displayName}</b> <span class="text-gray-400 font-mono">(${acc.username})</span></span>
+                            <span class="px-2 py-0.5 rounded bg-gray-100 font-bold">${acc.role === 'ADMIN' ? 'ADMIN' : acc.dept}</span>
+                        </button>`;
+                    });
+                    buttonsHtml += `<button type="button" onclick="window.demoSwitchGuest()" class="p-2.5 rounded-lg border hover:bg-gray-100 flex items-center justify-between text-xs w-full">
+                        <span><b>ผู้เยี่ยมชม (Guest)</b></span>
+                        <span class="px-2 py-0.5 rounded bg-gray-200 font-bold">GUEST</span>
+                    </button></div>`;
+
+                    window.demoSwitchAcc = (idx) => {
+                        Swal.close();
+                        this.loginAsMockAccount(this.demoAccounts[idx]);
+                    };
+                    window.demoSwitchGuest = () => {
+                        Swal.close();
+                        this.guestLogin();
+                    };
+
+                    Swal.fire({
+                        title: 'สลับบทบาท / แผนกสำหรับทดสอบ UX',
+                        html: '<p class="text-xs text-gray-500 mb-2">ใช้ทดสอบการส่งต่อข้ามแผนกและสิทธิ์ Admin / Guest</p>' + buttonsHtml,
+                        showConfirmButton: false,
+                        showCancelButton: true,
+                        cancelButtonText: 'ปิด'
+                    });
+                },
+                resetAllDemoData() {
+                    if (typeof window.resetSentDmDemoData === 'function') {
+                        window.resetSentDmDemoData();
+                        this.fetchPatients();
+                        this.fetchLineLogs();
+                        this.fetchLineConfigs();
+                        Swal.fire('รีเซ็ตสำเร็จ', 'คืนค่าข้อมูลผู้ป่วย ประวัติแจ้งเตือน และการตั้งค่า LINE จำลองกลับสู่ค่าเริ่มต้นแล้ว', 'success');
+                    }
+                },
+                getDeptBadgeClass(dept) {
+                    if (dept === 'OPD') return 'text-green-700 bg-green-100 border border-green-200';
+                    if (dept === 'เยี่ยมบ้าน') return 'text-blue-700 bg-blue-100 border border-blue-200';
+                    if (dept === 'กายภาพบำบัด') return 'text-teal-700 bg-teal-100 border border-teal-200';
+                    if (dept === 'สังคมสงเคราะห์') return 'text-amber-700 bg-amber-100 border border-amber-200';
+                    if (dept === 'ก้าวใหม่พลัส') return 'text-indigo-700 bg-indigo-100 border border-indigo-200';
+                    if (dept === 'สุขภาพจิต') return 'text-rose-700 bg-rose-100 border border-rose-200';
+                    return 'text-gray-700 bg-gray-100 border border-gray-200';
+                },
+                getDeptBtnClass(dept) {
+                    if (dept === 'OPD') return 'bg-green-600 hover:bg-green-700';
+                    if (dept === 'เยี่ยมบ้าน') return 'bg-blue-600 hover:bg-blue-700';
+                    if (dept === 'กายภาพบำบัด') return 'bg-teal-600 hover:bg-teal-700';
+                    if (dept === 'สังคมสงเคราะห์') return 'bg-amber-600 hover:bg-amber-700';
+                    if (dept === 'ก้าวใหม่พลัส') return 'bg-indigo-600 hover:bg-indigo-700';
+                    if (dept === 'สุขภาพจิต') return 'bg-rose-600 hover:bg-rose-700';
+                    return 'bg-gray-600 hover:bg-gray-700';
+                },
+                getDeptInfo(dept) {
+                    if (dept === 'OPD') return { icon: 'fa-hospital', bg: 'bg-green-600' };
+                    if (dept === 'เยี่ยมบ้าน') return { icon: 'fa-house-user', bg: 'bg-blue-600' };
+                    if (dept === 'กายภาพบำบัด') return { icon: 'fa-person-walking', bg: 'bg-teal-600' };
+                    if (dept === 'สังคมสงเคราะห์') return { icon: 'fa-hand-holding-heart', bg: 'bg-amber-600' };
+                    if (dept === 'ก้าวใหม่พลัส') return { icon: 'fa-star', bg: 'bg-indigo-600' };
+                    if (dept === 'สุขภาพจิต') return { icon: 'fa-brain', bg: 'bg-rose-600' };
+                    return { icon: 'fa-building', bg: 'bg-gray-600' };
+                },
+                getOtherDepartments(currentDept) {
+                    return this.allDepartments.filter(d => d !== currentDept);
+                },
+                applyUserDepartmentAndRole(userData) {
+                    if (!userData) return;
+                    if (userData.isGuest) {
+                        this.user = { role: 'GUEST', dept: 'GUEST', username: 'ผู้เยี่ยมชม', displayName: 'ผู้เยี่ยมชม (Guest)', isGuest: true };
+                        this.isLoggedIn = true;
+                        this.changeView('dashboard');
+                        return;
+                    }
+
+                    const rawDept = userData.dept || 'OPD';
+                    const userRole = (userData.role || 'USER').toString().toUpperCase();
+
+                    this.user = {
+                        role: userRole,
+                        dept: rawDept,
+                        username: userData.username || 'demo_user',
+                        displayName: userData.displayName || userData.username || 'พนักงานจำลอง',
+                        isGuest: false
+                    };
+
+                    this.isLoggedIn = true;
+                    this.changeView(userRole === 'GUEST' ? 'dashboard' : 'list');
+                    this.fetchPatients();
+                },
+                toggleMode() {
+                    this.isMobileMode = !this.isMobileMode;
+                    this.showSidebar = !this.isMobileMode;
+
+                    if (this.isMobileMode) {
+                        document.getElementById('app').style.maxWidth = '400px';
+                        document.getElementById('app').style.margin = '0 auto';
+                        document.getElementById('app').style.border = '1px solid #ccc';
+                    } else {
+                        document.getElementById('app').style.maxWidth = '100%';
+                        document.getElementById('app').style.margin = '0';
+                        document.getElementById('app').style.border = 'none';
+                    }
+                },
+                changeView(view) {
+                    if (this.user.role === 'GUEST' && view !== 'dashboard') {
+                        Swal.fire('ปฏิเสธการเข้าถึง', 'ผู้เยี่ยมชมสามารถดูได้เฉพาะหน้าสรุปข้อมูลการส่งต่อเท่านั้น', 'warning');
+                        return;
+                    }
+
+                    if (view === 'lineConfig' && !this.isAdmin) {
+                        Swal.fire('ปฏิเสธการเข้าถึง', 'เมนูนี้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น', 'warning');
+                        return;
+                    }
+
+                    this.currentView = view;
+
+                    if (this.isMobileMode) {
+                        this.showSidebar = false;
+                    }
+
+                    if (view === 'list' || view === 'dashboard' || view === 'pending') {
+                        this.fetchPatients();
+                    } else if (view === 'lineConfig') {
+                        this.fetchLineConfigs();
+                    } else if (view === 'logs') {
+                        this.fetchLineLogs();
+                    }
+                },
+                guestLogin() {
+                    const guestUser = { isGuest: true, displayName: "ผู้เยี่ยมชม (Guest)", role: "GUEST" };
+                    localStorage.setItem('sentdm_demo_user_session', JSON.stringify(guestUser));
+                    this.applyUserDepartmentAndRole(guestUser);
+                },
+                logout() {
+                    localStorage.removeItem('sentdm_demo_user_session');
+                    this.isLoggedIn = false;
+                    this.user = { role: '', dept: '', username: '', displayName: '', isGuest: false };
+                    this.dashFilter = { dateFrom: '', dateTo: '', dept: 'ทั้งหมด' };
+                    this.resetForm();
+                },
+                promptFirstTimeDepartmentSelection(rawUser, usernameKey) {
+                    let deptOptionsHtml = '<div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-left my-4">';
+                    this.allDepartments.forEach(d => {
+                        const info = this.getDeptInfo(d);
+                        deptOptionsHtml += '<button type="button" onclick="window.selectFirstTimeDept(\'' + d + '\')" class="p-3 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition flex items-center gap-3 text-left w-full group">' +
+                            '<div class="w-10 h-10 rounded-full flex items-center justify-center text-white ' + info.bg + ' flex-shrink-0">' +
+                            '<i class="fa-solid ' + info.icon + '"></i>' +
+                            '</div>' +
+                            '<div>' +
+                            '<div class="font-bold text-gray-800 group-hover:text-blue-600">แผนก ' + d + '</div>' +
+                            '</div>' +
+                            '</button>';
+                    });
+                    deptOptionsHtml += '</div>';
+
+                    window.selectFirstTimeDept = (chosenDept) => {
+                        Swal.close();
+                        rawUser.dept = chosenDept;
+                        localStorage.setItem('sentdm_demo_user_session', JSON.stringify(rawUser));
+                        this.applyUserDepartmentAndRole(rawUser);
+                        google.script.run.saveUserSSODepartment(usernameKey, rawUser.displayName || usernameKey, chosenDept, rawUser.role || 'USER');
+                    };
+
+                    Swal.fire({
+                        title: 'เลือกแผนกปฏิบัติงานของคุณ (ครั้งแรก)',
+                        html: '<p class="text-sm text-gray-600 mb-2">ยินดีต้อนรับคุณ <b>' + (rawUser.displayName || usernameKey) + '</b>!<br>กรุณาเลือกแผนกประจำของคุณเพื่อเริ่มใช้งานระบบ</p>' + deptOptionsHtml,
+                        showConfirmButton: false,
+                        allowOutsideClick: true,
+                        customClass: { popup: 'max-w-lg' }
+                    });
+                },
+                fetchPatients() {
+                    google.script.run.withSuccessHandler(res => {
+                        this.patients = res || [];
+                    }).getPatients();
+                },
+                countReferrals(p) {
+                    let count = 0;
+                    for (let i = 1; i <= 6; i++) { if (p[`ครั้งที่${i}_วันที่ส่งต่อ`]) count++; }
+                    return count;
+                },
+                countVisits(p) {
+                    let count = 0;
+                    for (let i = 1; i <= 6; i++) { if (p[`ครั้งที่${i}_วันที่เยี่ยม`]) count++; }
+                    return count;
+                },
+                resetForm() {
+                    this.searchCid = '';
+                    this.form = {};
+                    this.dmStatus = { qual: '-', gen: '-' };
+                    this.activeBlock = 1;
+                },
+                loadPatientByCid(targetRound) {
+                    const cid = String(this.searchCid).trim();
+                    if (cid.length !== 13) {
+                        Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสบัตรประชาชนให้ครบ 13 หลัก', 'warning');
+                        return;
+                    }
+
+                    const existing = this.patients.find(p => String(p['CID']).replace(/'/g, '') === cid);
+
+                    if (existing) {
+                        this.form = JSON.parse(JSON.stringify(existing));
+                        if (this.form.CID) this.form.CID = String(this.form.CID).replace(/'/g, '');
+                        if (this.form.เบอร์โทร) this.form.เบอร์โทร = String(this.form.เบอร์โทร).replace(/'/g, '');
+
+                        if (this.form.HN && String(this.form.HN).trim() !== '') {
+                            this.form.HN_locked = true;
+                        }
+
+                        const checkboxFields = ['NG', 'F_C'];
+                        for (let i = 1; i <= 6; i++) {
+                            checkboxFields.push(`ครั้งที่${i}_ทำแผลต่อเนื่อง`, `ครั้งที่${i}_เปลี่ยนสาย_NG`, `ครั้งที่${i}_เปลี่ยน_Foleys_cath`, `ครั้งที่${i}_ทำกายภาพ`, `ครั้งที่${i}_สังคมสงเคราะห์`, `ครั้งที่${i}_เจาะเลือด`, `ครั้งที่${i}_อื่นๆ_เช็ค`);
+                        }
+                        checkboxFields.forEach(k => {
+                            this.form[k] = (String(this.form[k]).toUpperCase() === 'TRUE');
+                        });
+
+                        google.script.run.withSuccessHandler(res => {
+                            this.dmStatus = res;
+                            if (targetRound && !isNaN(targetRound) && targetRound >= 1 && targetRound <= 6) {
+                                this.activeBlock = parseInt(targetRound);
+                            } else {
+                                this.activeBlock = this.countReferrals(this.form) + 1;
+                                if (this.activeBlock > 6) this.activeBlock = 6;
+                            }
+                        }).checkDMStatus(cid);
+                    } else {
+                        this.form = { CID: cid, แผนก: this.user.dept, HN_locked: false };
+                        if (targetRound && !isNaN(targetRound) && targetRound >= 1 && targetRound <= 6) {
+                            this.activeBlock = parseInt(targetRound);
+                        } else {
+                            this.activeBlock = 1;
+                        }
+                        google.script.run.withSuccessHandler(res => {
+                            this.dmStatus = res;
+                        }).checkDMStatus(cid);
+                    }
+                },
+                editPatient(cid) {
+                    this.searchCid = cid;
+                    this.loadPatientByCid();
+                    this.changeView('form');
+                },
+                calculateAge() {
+                    if (!this.form.วันเกิด) return;
+                    let parts = String(this.form.วันเกิด).split('/');
+                    if (parts.length === 3) {
+                        let bYear = parseInt(parts[2]);
+                        let currentYear = new Date().getFullYear() + 543;
+                        this.form.อายุ = currentYear - bYear;
+                    }
+                },
+                toggleBlock(i) {
+                    this.activeBlock = this.activeBlock === i ? null : i;
+                },
+                confirmLineNotify(targetDept, round) {
+                    let date = this.form['ครั้งที่'+round+'_วันที่ส่งต่อ'] || '-';
+                    let info = this.form['ครั้งที่'+round+'_ข้อมูลเพิ่มเติม'] || '-';
+                    let tel = this.form.เบอร์โทร ? String(this.form.เบอร์โทร).trim() : '-';
+
+                    let addr = this.form.ที่อยู่ ? String(this.form.ที่อยู่).trim() : '';
+                    let comm = this.form.ชุมชน ? String(this.form.ชุมชน).trim() : '';
+                    let fullAddr = '-';
+                    if (addr && comm) fullAddr = addr + ' (ชุมชน: ' + comm + ')';
+                    else if (addr) fullAddr = addr;
+                    else if (comm) fullAddr = 'ชุมชน: ' + comm;
+
+                    let reason = this.form.สาเหตุที่ส่ง ? String(this.form.สาเหตุที่ส่ง).trim() : '-';
+
+                    let message = '***แจ้งเตือนการส่งต่อผู้ป่วย\n' +
+                        'จากแผนก: ' + this.user.dept + '\n' +
+                        'ส่งต่อไปยัง: ' + targetDept + '\n' +
+                        'ครั้งที่ส่งต่อ: ' + round + '\n' +
+                        'วันที่ส่งต่อ: ' + date + '\n' +
+                        'ผู้ป่วยชื่อ: ' + (this.form.ชื่อ || '') + ' ' + (this.form.นามสกุล || '') + '\n' +
+                        'HN: ' + (this.form.HN || '-') + '\n' +
+                        'เบอร์ติดต่อ: ' + tel + '\n' +
+                        'ที่อยู่: ' + fullAddr + '\n' +
+                        'สาเหตุที่ส่งต่อ: ' + reason + '\n' +
+                        'ข้อมูลเพิ่มเติม: ' + info + '***';
+
+                    Swal.fire({
+                        title: 'ยืนยันการส่งต่อไปยังแผนก "' + targetDept + '"?',
+                        html: '<pre class="text-left bg-gray-100 p-3 rounded text-sm mt-2 whitespace-pre-wrap font-sans">' + message + '</pre>',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'จำลองส่งข้อความ LINE',
+                        cancelButtonText: 'ยกเลิก',
+                        confirmButtonColor: '#059669'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            let meta = {
+                                type: 'ส่งต่อ',
+                                round: round,
+                                fromDept: this.user.dept,
+                                toDept: targetDept,
+                                hn: this.form.HN || '-',
+                                patientName: (this.form.ชื่อ || '') + ' ' + (this.form.นามสกุล || ''),
+                                cid: this.form.CID || '-',
+                                sender: this.user.displayName || this.user.username,
+                                message: message
+                            };
+                            google.script.run
+                                .withSuccessHandler(res => {
+                                    if (res.success) Swal.fire('สำเร็จ', res.msg, 'success');
+                                    else Swal.fire('แจ้งเตือน', res.msg, 'error');
+                                })
+                                .sendLineNotifyToDept(message, targetDept, meta);
+                        }
+                    });
+                },
+                confirmLineNotifyVisit(round) {
+                    let date = this.form['ครั้งที่'+round+'_วันที่เยี่ยม'] || '-';
+                    let act = this.form['ครั้งที่'+round+'_กิจกรรมพยาบาล'] || '-';
+                    let rep = this.form['ครั้งที่'+round+'_ผู้รายงาน'] || '-';
+                    let tel = this.form.เบอร์โทร ? String(this.form.เบอร์โทร).trim() : '-';
+
+                    let addr = this.form.ที่อยู่ ? String(this.form.ที่อยู่).trim() : '';
+                    let comm = this.form.ชุมชน ? String(this.form.ชุมชน).trim() : '';
+                    let fullAddr = '-';
+                    if (addr && comm) fullAddr = addr + ' (ชุมชน: ' + comm + ')';
+                    else if (addr) fullAddr = addr;
+                    else if (comm) fullAddr = 'ชุมชน: ' + comm;
+
+                    let reason = this.form.สาเหตุที่ส่ง ? String(this.form.สาเหตุที่ส่ง).trim() : '-';
+
+                    let needs = [];
+                    if (this.form['ครั้งที่'+round+'_ทำแผลต่อเนื่อง']) needs.push('ทำแผลต่อเนื่อง (' + (this.form['ครั้งที่'+round+'_ระบุแผล'] || '-') + ')');
+                    if (this.form['ครั้งที่'+round+'_เปลี่ยนสาย_NG']) needs.push('เปลี่ยนสาย NG');
+                    if (this.form['ครั้งที่'+round+'_เปลี่ยน_Foleys_cath']) needs.push('เปลี่ยนสายสวนปัสสาวะ (Foley catheter)');
+                    if (this.form['ครั้งที่'+round+'_ทำกายภาพ']) needs.push('ทำกายภาพ');
+                    if (this.form['ครั้งที่'+round+'_สังคมสงเคราะห์']) needs.push('สังคมสงเคราะห์');
+                    if (this.form['ครั้งที่'+round+'_เจาะเลือด']) needs.push('เจาะเลือด');
+                    if (this.form['ครั้งที่'+round+'_อื่นๆ_เช็ค']) needs.push('อื่นๆ (' + (this.form['ครั้งที่'+round+'_อื่นๆ_ระบุ'] || '-') + ')');
+
+                    let needStr = needs.length > 0 ? '\nมีความต้องการ: ' + needs.join(', ') : '';
+                    let message = '***แจ้งเตือนผลการเยี่ยม/การดูแล\n' +
+                        'จากแผนก: ' + this.user.dept + '\n' +
+                        'ครั้งที่เยี่ยม: ' + round + '\n' +
+                        'วันที่เยี่ยม: ' + date + '\n' +
+                        'ผู้ป่วยชื่อ: ' + (this.form.ชื่อ || '') + ' ' + (this.form.นามสกุล || '') + '\n' +
+                        'HN: ' + (this.form.HN || '-') + '\n' +
+                        'เบอร์ติดต่อ: ' + tel + '\n' +
+                        'ที่อยู่: ' + fullAddr + '\n' +
+                        'สาเหตุที่ส่งต่อ: ' + reason + '\n' +
+                        'กิจกรรม/รายงาน: ' + act + '\n' +
+                        'ผู้รายงาน: ' + rep + needStr + '***';
+
+                    let deptCheckboxesHtml = '<div class="text-left my-3 space-y-2">';
+                    this.allDepartments.forEach(d => {
+                        let isDefaultChecked = (d === this.form.แผนก || d === 'OPD' || d === 'เยี่ยมบ้าน') ? 'checked' : '';
+                        let ownerTag = (d === this.form.แผนก) ? '<span class="text-xs text-blue-600 font-bold">(เจ้าของเคส)</span>' : '';
+                        deptCheckboxesHtml += '<label class="flex items-center gap-2 p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer text-sm">' +
+                            '<input type="checkbox" name="visit_target_dept" value="' + d + '" ' + isDefaultChecked + ' class="w-4 h-4 text-purple-600 rounded"> ' +
+                            '<span class="font-medium">' + d + '</span> ' + ownerTag +
+                            '</label>';
+                    });
+                    deptCheckboxesHtml += '</div>';
+
+                    Swal.fire({
+                        title: 'เลือกแผนกที่ต้องการส่งผลการเยี่ยม',
+                        html: '<p class="text-xs text-gray-500 mb-2">เลือกแผนกปลายทางที่ต้องการส่งการแจ้งเตือน LINE:</p>' + deptCheckboxesHtml + '<pre class="text-left bg-gray-100 p-2 rounded text-xs whitespace-pre-wrap max-h-32 overflow-y-auto font-sans">' + message + '</pre>',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'จำลองส่งแจ้งเตือน LINE',
+                        cancelButtonText: 'ยกเลิก',
+                        confirmButtonColor: '#9333ea',
+                        preConfirm: () => {
+                            const selected = [];
+                            document.querySelectorAll('input[name="visit_target_dept"]:checked').forEach(cb => selected.push(cb.value));
+                            if (selected.length === 0) {
+                                Swal.showValidationMessage('กรุณาเลือกอย่างน้อย 1 แผนก');
+                                return false;
+                            }
+                            return selected;
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed && result.value) {
+                            const selectedDepts = result.value;
+                            let meta = {
+                                type: 'ผลการเยี่ยม',
+                                round: round,
+                                fromDept: this.user.dept,
+                                hn: this.form.HN || '-',
+                                patientName: (this.form.ชื่อ || '') + ' ' + (this.form.นามสกุล || ''),
+                                cid: this.form.CID || '-',
+                                sender: this.user.displayName || this.user.username,
+                                message: message
+                            };
+                            google.script.run
+                                .withSuccessHandler(res => {
+                                    if (res.success) Swal.fire('สำเร็จ', res.msg, 'success');
+                                    else Swal.fire('ผลการส่ง', res.msg, 'info');
+                                })
+                                .sendLineNotifyMultiDepts(message, selectedDepts, meta);
+                        }
+                    });
+                },
+                fetchLineLogs() {
+                    this.loadingLogs = true;
+                    google.script.run
+                        .withSuccessHandler(res => {
+                            this.loadingLogs = false;
+                            this.lineLogs = res || [];
+                        })
+                        .getLineLogs();
+                },
+                showLogDetail(log) {
+                    let content = '<div class="text-left space-y-2 text-xs md:text-sm">' +
+                        '<div class="grid grid-cols-2 gap-2 bg-gray-50 p-2.5 rounded border text-xs">' +
+                        '<div><b>ประเภท:</b> ' + (log['ประเภท'] || '-') + '</div>' +
+                        '<div><b>ครั้งที่:</b> ' + (log['ครั้งที่'] || '-') + '</div>' +
+                        '<div><b>จากแผนก:</b> ' + (log['จากแผนก'] || '-') + '</div>' +
+                        '<div><b>ส่งถึง:</b> ' + (log['ส่งถึงแผนก'] || '-') + '</div>' +
+                        '<div><b>ผู้ป่วย:</b> ' + (log['ชื่อ-นามสกุล'] || '-') + '</div>' +
+                        '<div><b>HN:</b> ' + (log['HN'] || '-') + '</div>' +
+                        '<div><b>ผู้ส่ง:</b> ' + (log['ผู้ส่ง'] || '-') + '</div>' +
+                        '<div><b>เวลา:</b> ' + (log['Timestamp'] || '-') + '</div>' +
+                        '</div>' +
+                        '<div><b class="text-gray-700 text-xs">ข้อความแจ้งเตือนที่ส่ง:</b><pre class="bg-gray-100 p-2.5 rounded mt-1 whitespace-pre-wrap font-sans text-xs max-h-48 overflow-y-auto border">' + (log['ข้อความ/ข้อมูลเพิ่มเติม'] || '-') + '</pre></div>' +
+                        '<div class="text-xs"><b>สถานะ:</b> ' + (log['สถานะ'] || '-') + '</div>' +
+                        '</div>';
+
+                    const rawCid = String(log['CID'] || '').replace(/'/g, '').trim();
+                    const rawHn = String(log['HN'] || '').trim();
+                    const hasPatient = (rawCid && rawCid !== '-') || (rawHn && rawHn !== '-');
+                    const canEdit = this.user.role !== 'GUEST';
+
+                    if (hasPatient && canEdit) {
+                        Swal.fire({
+                            title: 'รายละเอียดการแจ้งเตือน LINE',
+                            html: content,
+                            showCancelButton: true,
+                            cancelButtonText: 'ปิด',
+                            cancelButtonColor: '#6b7280',
+                            confirmButtonText: '<i class="fa-solid fa-file-waveform mr-1.5"></i> ดูข้อมูล',
+                            confirmButtonColor: '#2563eb',
+                            reverseButtons: true,
+                            customClass: { popup: 'max-w-lg' }
+                        }).then((result) => {
+                            if (result.isConfirmed) this.openPatientFromLog(log);
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'รายละเอียดการแจ้งเตือน LINE',
+                            html: content,
+                            confirmButtonText: 'ปิด',
+                            confirmButtonColor: '#6b7280',
+                            customClass: { popup: 'max-w-lg' }
+                        });
+                    }
+                },
+                openPatientFromLog(log) {
+                    if (!log) return;
+                    const cleanCid = String(log['CID'] || '').replace(/'/g, '').trim();
+                    const cleanHn = String(log['HN'] || '').trim();
+                    const round = parseInt(log['ครั้งที่']);
+
+                    let targetPatient = null;
+                    if (cleanCid && cleanCid !== '-') {
+                        targetPatient = this.patients.find(p => String(p['CID']).replace(/'/g, '').trim() === cleanCid);
+                    }
+                    if (!targetPatient && cleanHn && cleanHn !== '-') {
+                        targetPatient = this.patients.find(p => String(p['HN']).trim() === cleanHn);
+                    }
+
+                    if (targetPatient) {
+                        const cid = String(targetPatient['CID']).replace(/'/g, '').trim();
+                        this.searchCid = cid;
+                        this.loadPatientByCid(round);
+                        this.changeView('form');
+                    } else {
+                        Swal.fire('ไม่พบข้อมูล', 'ไม่พบข้อมูลคนไข้รายนี้ในระบบทะเบียนจำลอง', 'warning');
+                    }
+                },
+                saveData() {
+                    this.form.ผล_BP = this.calcBP;
+                    this.form.ผล_DTX_NPO = this.calcDtxNpo;
+                    this.form.ผล_DTX_หลังอาหาร = this.calcDtxPost;
+
+                    google.script.run.withSuccessHandler(res => {
+                        if (res.success) {
+                            Swal.fire('สำเร็จ', res.msg, 'success').then(() => {
+                                this.fetchPatients();
+                                this.changeView('list');
+                                this.resetForm();
+                            });
+                        } else {
+                            Swal.fire('ผิดพลาด', res.msg, 'error');
+                        }
+                    }).savePatientData(this.form);
+                },
+                fetchLineConfigs() {
+                    this.loadingLineConfigs = true;
+                    google.script.run
+                        .withSuccessHandler(res => {
+                            this.loadingLineConfigs = false;
+                            this.lineConfigsList = res || [];
+                        })
+                        .getLineConfigs();
+                },
+                saveLineConfigsData() {
+                    this.savingLineConfigs = true;
+                    google.script.run
+                        .withSuccessHandler(res => {
+                            this.savingLineConfigs = false;
+                            if (res.success) {
+                                Swal.fire('สำเร็จ', res.msg, 'success');
+                                this.fetchLineConfigs();
+                            } else {
+                                Swal.fire('ผิดพลาด', res.msg, 'error');
+                            }
+                        })
+                        .saveLineConfigs(this.lineConfigsList, this.user.displayName || this.user.username);
+                },
+                testLineMessage(dept) {
+                    google.script.run
+                        .withSuccessHandler(res => {
+                            if (res.success) {
+                                Swal.fire('ส่งสำเร็จ', res.msg, 'success');
+                            } else {
+                                Swal.fire('ทดสอบไม่สำเร็จ', res.msg, 'error');
+                            }
+                        })
+                        .testSendLine(dept, '');
+                }
+            },
+            mounted() {
+                if (window.innerWidth < 768) {
+                    this.isMobileMode = true;
+                    this.showSidebar = false;
+                }
+                const savedSession = localStorage.getItem('sentdm_demo_user_session');
+                if (savedSession) {
+                    try {
+                        const parsed = JSON.parse(savedSession);
+                        if (parsed && (parsed.dept || parsed.role)) {
+                            this.applyUserDepartmentAndRole(parsed);
+                        }
+                    } catch (e) {
+                        localStorage.removeItem('sentdm_demo_user_session');
+                    }
+                }
+            }
+        });
+
+        app.component('thai-date', ThaiDatePicker);
+        app.mount('#app');
+    </script>
+
+</body>
+
+</html>

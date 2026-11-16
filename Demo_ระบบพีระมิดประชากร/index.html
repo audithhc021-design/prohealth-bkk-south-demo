@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEMO — ระบบพีระมิดประชากร (Pro-Health Data BKK South)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./mock-backend.js"></script>
+    <script>
+        Babel.registerPreset("custom-react", {
+            presets: [
+                [Babel.availablePresets["react"], { runtime: "classic" }]
+            ]
+        });
+    </script>
+
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                background: white;
+                margin: 0;
+            }
+
+            .print-full-width {
+                width: 100% !important;
+                max-width: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="custom-react">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        const CONST_DISEASES = ['เบาหวาน', 'ความดัน', 'หัวใจ', 'ไขมัน', 'หลอดเลือดสมอง'];
+        const CONST_RISKS = ['เบาหวาน', 'ความดัน', 'โรคเก๊าท์', 'ไตวายเรื้อรัง', 'หัวใจ', 'เส้นเลือดสมอง', 'ถุงลมโป่งพอง', 'ไขมันในเลือด', 'โรคอ้วน', 'พฤติกรรม', 'มะเร็ง', 'โลหิตจาง', 'เส้นเลือดหัวใจและหลอดเลือด', 'โรคเครียด'];
+        const WATTHANA_COMMUNITIES = [
+            "1.ไม่กำหนดชุมชน", "2.เฉลิมอนุสรณ์", "3.รื่นฤดี", "4.สุเหร่าบ้านดอน", "5.แจ่มจันทร์",
+            "6.คลองเป้ง(ลีลานุช)", "7.หลัง สน.ทองหล่อ", "8.นวลจิตร", "9.ชวาลา", "10.ข้างสะพานคลองตัน",
+            "11.เกษมสำราญ", "12.พัฒนาบ้านสามอิน", "13.ศาลาลอย", "14.หมู่บ้านพิบูลเวศม์",
+            "15.มีสุวรรณ 2", "16.มีสุวรรณ 3", "17.สุเหร่าบางมะเขือ"
+        ];
+
+        function App() {
+            const [authRole, setAuthRole] = useState(null);
+            const [adminPasswordInput, setAdminPasswordInput] = useState('');
+            const [showAdminInput, setShowAdminInput] = useState(false);
+            const [authError, setAuthError] = useState('');
+
+            const [currentMenu, setCurrentMenu] = useState('health');
+            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+            const currentYearTH = useMemo(() => new Date().getFullYear() + 543, []);
+            const [projectionYear, setProjectionYear] = useState(currentYearTH);
+
+            const [healthData, setHealthData] = useState([]);
+            const [isLoadingHealth, setIsLoadingHealth] = useState(false);
+
+            const [areaPop, setAreaPop] = useState({});
+            const [areaNotes, setAreaNotes] = useState({});
+            const [isLoadingArea, setIsLoadingArea] = useState(false);
+
+            const [watthanaData, setWatthanaData] = useState({});
+            const [isLoadingWatthana, setIsLoadingWatthana] = useState(false);
+
+            const [ltcHhcData, setLtcHhcData] = useState([]);
+            const [isLoadingLtcHhc, setIsLoadingLtcHhc] = useState(false);
+
+            const [availableYears, setAvailableYears] = useState([]);
+            const [availableCommunities, setAvailableCommunities] = useState([]);
+            const [availableAddressTypes, setAvailableAddressTypes] = useState([]);
+
+            const [filters, setFilters] = useState({
+                year: 'all', communities: [], addressType: 'all', diseases: [], risks: []
+            });
+
+            const [pyramidConfig, setPyramidConfig] = useState({
+                group5Years: false, group10Years: false, groupLifeStage: false, hideEmpty: false, combineGenders: false
+            });
+
+            useEffect(() => {
+                if (authRole) {
+                    fetchHealthData();
+                    fetchAreaAndWatthanaData();
+                    fetchLtcHhcData();
+                }
+            }, [authRole]);
+
+            const fetchHealthData = () => {
+                setIsLoadingHealth(true);
+                window.DemoBackend.getHealthData()
+                    .then((data) => {
+                        setHealthData(data);
+                        setAvailableYears([...new Set(data.map(d => d.year).filter(Boolean))].sort((a, b) => b - a));
+                        setAvailableCommunities([...new Set(data.map(d => d.community).filter(Boolean))].sort());
+                        setAvailableAddressTypes([...new Set(data.map(d => d.addressType).filter(Boolean))].sort());
+                        setIsLoadingHealth(false);
+                    })
+                    .catch((err) => { console.error(err); setIsLoadingHealth(false); });
+            };
+
+            const fetchAreaAndWatthanaData = () => {
+                setIsLoadingArea(true);
+                setIsLoadingWatthana(true);
+                window.DemoBackend.getAreaData()
+                    .then((data) => {
+                        setAreaPop(data.population || {});
+                        setAreaNotes(data.notes || {});
+                        setIsLoadingArea(false);
+                    })
+                    .catch((err) => { console.error(err); setIsLoadingArea(false); });
+
+                window.DemoBackend.getWatthanaData()
+                    .then((data) => {
+                        setWatthanaData(data);
+                        setIsLoadingWatthana(false);
+                    })
+                    .catch((err) => { console.error(err); setIsLoadingWatthana(false); });
+            };
+
+            const fetchLtcHhcData = () => {
+                setIsLoadingLtcHhc(true);
+                window.DemoBackend.getLtcHhcData()
+                    .then((data) => {
+                        setLtcHhcData(data);
+                        setIsLoadingLtcHhc(false);
+                    })
+                    .catch((err) => {
+                        console.error("Error fetching LTC-HHC data:", err);
+                        setIsLoadingLtcHhc(false);
+                    });
+            };
+
+            const handleResetDemo = () => {
+                if (!window.confirm("รีเซ็ตข้อมูลจำลองทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?")) return;
+                window.DemoBackend.resetDemoData();
+                fetchAreaAndWatthanaData();
+                alert("รีเซ็ตข้อมูลจำลองเรียบร้อยแล้ว");
+            };
+
+            const handleAdminLogin = (e) => {
+                e.preventDefault();
+                if (adminPasswordInput.trim() === window.DemoBackend.DEMO_ADMIN_PASS) {
+                    setAuthError('');
+                    setAdminPasswordInput('');
+                    setShowAdminInput(false);
+                    setAuthRole('admin');
+                } else {
+                    setAuthError(`รหัสผ่านไม่ถูกต้อง (สำหรับ Demo ให้ใช้: ${window.DemoBackend.DEMO_ADMIN_PASS})`);
+                }
+            };
+
+            const parseAge = (ageStr) => {
+                if (ageStr === '<1') return 0;
+                const num = parseInt(ageStr, 10);
+                return isNaN(num) ? -1 : num;
+            };
+
+            if (!authRole) {
+                return (
+                    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+                        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold mb-5 border border-amber-200">
+                                <i className="fa-solid fa-flask"></i> DEMO MOCK-UP (Synthetic Data)
+                            </div>
+                            <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5">
+                                <i className="fa-solid fa-users text-4xl text-blue-600"></i>
+                            </div>
+                            <h1 className="text-2xl font-bold text-gray-800 mb-1">ระบบพีระมิดประชากร</h1>
+                            <p className="text-xs font-semibold text-blue-600 mb-3">Pro-Health Data BKK South</p>
+                            <p className="text-gray-500 text-sm mb-6">กรุณาเลือกรูปแบบการเข้าสู่ระบบจำลองสำหรับ UX Audit</p>
+
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => setAuthRole('guest')}
+                                    className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors border border-gray-300"
+                                >
+                                    เข้าสู่ระบบ ผู้เยี่ยมชม (Guest)
+                                </button>
+
+                                {!showAdminInput ? (
+                                    <button
+                                        onClick={() => setShowAdminInput(true)}
+                                        className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-md"
+                                    >
+                                        เข้าสู่ระบบ ผู้ดูแลระบบ (Admin)
+                                    </button>
+                                ) : (
+                                    <form onSubmit={handleAdminLogin} className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-left space-y-3">
+                                        <label className="block text-xs font-bold text-blue-900">รหัสผ่านผู้ดูแลระบบ (Mock Demo Credential)</label>
+                                        <input
+                                            type="password"
+                                            value={adminPasswordInput}
+                                            onChange={(e) => setAdminPasswordInput(e.target.value)}
+                                            placeholder={`กรอก ${window.DemoBackend.DEMO_ADMIN_PASS}`}
+                                            className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            autoFocus
+                                        />
+                                        {authError && <p className="text-xs text-red-600 font-medium">{authError}</p>}
+                                        <div className="flex gap-2">
+                                            <button type="submit" className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">ยืนยัน</button>
+                                            <button type="button" onClick={() => setAdminPasswordInput(window.DemoBackend.DEMO_ADMIN_PASS)} className="px-3 py-2 bg-white border border-blue-300 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold">เติมรหัส Demo</button>
+                                            <button type="button" onClick={() => { setShowAdminInput(false); setAuthError(''); }} className="px-3 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg text-xs font-semibold">ยกเลิก</button>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
+
+                            <div className="mt-6 p-3 bg-gray-50 border rounded-lg text-left text-xs text-gray-600 space-y-1">
+                                <p className="font-bold text-gray-700"><i className="fa-solid fa-circle-info text-blue-500 mr-1"></i> บัญชีทดสอบระบบ Demo:</p>
+                                <p>• <strong>ผู้เยี่ยมชม:</strong> กดเข้าใช้งานได้ทันที (ดูรายงานและกรองข้อมูลทุกมิติ)</p>
+                                <p>• <strong>ผู้ดูแลระบบ (Mock):</strong> รหัสผ่าน <code className="bg-gray-200 px-1.5 py-0.5 rounded font-mono text-gray-800">demo-admin</code></p>
+                                <p className="text-[11px] text-amber-700 pt-1">* หมายเหตุ: เป็นรหัสจำลองสำหรับ Demo เท่านั้น ไม่ใช่รหัสผ่านระบบจริง</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
+                    <aside className={`${isSidebarOpen ? 'w-64' : 'w-0 -translate-x-full'} lg:translate-x-0 lg:w-64 bg-white border-r shadow-sm transition-all duration-300 flex flex-col fixed lg:static h-full z-20 print:hidden`}>
+                        <div className="p-4 border-b flex justify-between items-center bg-blue-600 text-white">
+                            <div>
+                                <h2 className="font-bold text-lg whitespace-nowrap overflow-hidden">ประชากร Data Center</h2>
+                                <span className="text-[10px] uppercase tracking-wider bg-amber-400 text-amber-950 font-bold px-1.5 py-0.5 rounded">Demo Mode</span>
+                            </div>
+                            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-white"><i className="fa-solid fa-xmark text-xl"></i></button>
+                        </div>
+                        <div className="p-4 flex flex-col gap-2 flex-grow overflow-y-auto">
+                            <SidebarBtn active={currentMenu === 'health'} icon="fa-solid fa-filter" text="ข้อมูลคัดกรองสุขภาพ" onClick={() => setCurrentMenu('health')} />
+                            <SidebarBtn active={currentMenu === 'area'} icon="fa-solid fa-building-user" text="ประชากรพื้นที่รับผิดชอบ" onClick={() => setCurrentMenu('area')} />
+                            <SidebarBtn active={currentMenu === 'watthana'} icon="fa-solid fa-city" text="สถิติประชากรเขตวัฒนา" onClick={() => setCurrentMenu('watthana')} />
+                            <SidebarBtn active={currentMenu === 'ltc-hhc'} icon="fa-solid fa-house-medical" text="LTC-HHC" onClick={() => setCurrentMenu('ltc-hhc')} />
+                            {authRole === 'admin' && <SidebarBtn active={currentMenu === 'manage'} icon="fa-solid fa-gear" text="จัดการข้อมูล (Admin)" onClick={() => setCurrentMenu('manage')} />}
+                        </div>
+                        <div className="p-4 border-t space-y-2">
+                            <div className="flex items-center gap-3 mb-2 text-sm text-gray-600">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><i className="fa-solid fa-user"></i></div>
+                                <div>
+                                    <p className="font-semibold text-gray-800">{authRole === 'admin' ? 'ผู้ดูแลระบบ (Mock)' : 'ผู้เยี่ยมชม (Mock)'}</p>
+                                </div>
+                            </div>
+                            <button onClick={handleResetDemo} className="w-full py-2 flex items-center justify-center gap-2 text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg text-xs font-semibold transition-colors">
+                                <i className="fa-solid fa-rotate-left"></i> รีเซ็ตข้อมูลจำลอง
+                            </button>
+                            <button onClick={() => { setAuthRole(null); setCurrentMenu('health'); }} className="w-full py-2 flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 rounded-lg text-sm transition-colors">
+                                <i className="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                            </button>
+                        </div>
+                    </aside>
+
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden relative w-full">
+                        <header className="bg-white border-b p-4 flex items-center justify-between lg:hidden print:hidden">
+                            <button onClick={() => setIsSidebarOpen(true)} className="text-gray-600"><i className="fa-solid fa-bars text-xl"></i></button>
+                            <span className="font-bold text-gray-800">ประชากร Data Center (Demo)</span>
+                            <div className="w-6"></div>
+                        </header>
+
+                        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2 print:hidden">
+                            <div className="flex items-center gap-2">
+                                <span className="bg-amber-200 text-amber-950 font-bold px-2 py-0.5 rounded">DEMO MOCK-UP</span>
+                                <span>กำลังแสดงผลด้วยชุดข้อมูลสังเคราะห์ (Synthetic Seed Data) — การแก้ไขในโหมด Admin จะบันทึกเฉพาะในเบราว์เซอร์ (localStorage)</span>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 md:p-6 print:p-0">
+                            {currentMenu === 'health' && (
+                                <HealthScreeningView data={healthData} isLoading={isLoadingHealth} availableYears={availableYears} availableCommunities={availableCommunities} availableAddressTypes={availableAddressTypes} filters={filters} setFilters={setFilters} pyramidConfig={pyramidConfig} setPyramidConfig={setPyramidConfig} parseAge={parseAge} currentYearTH={currentYearTH} projectionYear={projectionYear} setProjectionYear={setProjectionYear} />
+                            )}
+                            {currentMenu === 'area' && (
+                                <AreaPopulationView areaPop={areaPop} areaNotes={areaNotes} isLoading={isLoadingArea} pyramidConfig={pyramidConfig} setPyramidConfig={setPyramidConfig} currentYearTH={currentYearTH} projectionYear={projectionYear} setProjectionYear={setProjectionYear} />
+                            )}
+                            {currentMenu === 'watthana' && (
+                                <WatthanaPopulationView watthanaData={watthanaData} isLoading={isLoadingWatthana} pyramidConfig={pyramidConfig} setPyramidConfig={setPyramidConfig} currentYearTH={currentYearTH} projectionYear={projectionYear} setProjectionYear={setProjectionYear} />
+                            )}
+                            {currentMenu === 'ltc-hhc' && (
+                                <LtcHhcView data={ltcHhcData} isLoading={isLoadingLtcHhc} pyramidConfig={pyramidConfig} setPyramidConfig={setPyramidConfig} currentYearTH={currentYearTH} projectionYear={projectionYear} setProjectionYear={setProjectionYear} />
+                            )}
+                            {currentMenu === 'manage' && authRole === 'admin' && (
+                                <DataManagementView areaPop={areaPop} areaNotes={areaNotes} watthanaData={watthanaData} refreshData={fetchAreaAndWatthanaData} currentYearTH={currentYearTH} />
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const SidebarBtn = ({ active, icon, text, onClick }) => (
+            <button onClick={onClick} className={`flex items-center gap-3 w-full p-3 rounded-lg text-left text-sm font-medium transition-colors ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+                <i className={`${icon} w-5 text-center`}></i>{text}
+            </button>
+        );
+
+        const MultiSelect = ({ options, selected, onChange, placeholder, disabled }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const containerRef = useRef(null);
+            useEffect(() => {
+                const handleClickOutside = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setIsOpen(false); };
+                document.addEventListener('mousedown', handleClickOutside);
+                return () => document.removeEventListener('mousedown', handleClickOutside);
+            }, []);
+            const toggleOption = (opt) => {
+                if (selected.includes(opt)) onChange(selected.filter(i => i !== opt));
+                else onChange([...selected, opt]);
+            };
+            return (
+                <div className="relative" ref={containerRef}>
+                    <div className={`min-h-[42px] border rounded-lg px-3 py-2 flex items-center justify-between text-sm transition-colors ${disabled ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-70' : 'bg-white border-gray-300 cursor-pointer hover:border-blue-400'}`} onClick={() => !disabled && setIsOpen(!isOpen)}>
+                        <div className="flex flex-wrap gap-1 items-center overflow-hidden">
+                            {selected.length === 0 ? <span className={disabled ? "text-gray-500" : "text-gray-400"}>{disabled ? "ถูกระงับการเลือก" : placeholder}</span> :
+                                selected.length > 2 ? <span className="text-gray-700">เลือกแล้ว {selected.length} รายการ</span> :
+                                    selected.map(s => <span key={s} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">{s}</span>)
+                            }
+                        </div>
+                        <i className={`fa-solid fa-chevron-down ml-2 text-xs ${disabled ? 'text-gray-300' : 'text-gray-400'}`}></i>
+                    </div>
+                    {isOpen && !disabled && (
+                        <div className="absolute z-30 top-full left-0 w-64 mt-1 bg-white border rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                            <div className="p-2 hover:bg-gray-50 cursor-pointer border-b text-sm text-blue-600 font-medium" onClick={() => onChange([])}>ล้างการเลือกทั้งหมด</div>
+                            {options.map(opt => (
+                                <label key={opt} className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm">
+                                    <input type="checkbox" className="mr-2 h-4 w-4 text-blue-600 rounded border-gray-300" checked={selected.includes(opt)} onChange={() => toggleOption(opt)} />
+                                    <span className="truncate">{opt}</span>
+                                </label>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- View 1: Health Screening ---
+        const HealthScreeningView = ({ data, isLoading, availableYears, availableCommunities, availableAddressTypes, filters, setFilters, pyramidConfig, setPyramidConfig, parseAge, currentYearTH, projectionYear, setProjectionYear }) => {
+            const baseTitle = "พีระมิดประชากรจากการคัดกรองสุขภาพ";
+
+            const printTitle = useMemo(() => {
+                let details = [];
+                details.push(filters.year !== 'all' ? `ปีงบประมาณ ${filters.year}` : 'รวมทุกปีงบประมาณ');
+                if (filters.communities.length > 0) details.push(`ชุมชน: ${filters.communities.join(', ')}`);
+                if (filters.addressType !== 'all') details.push(`ที่อยู่: ${filters.addressType}`);
+                if (filters.diseases.length > 0) details.push(`โรค: ${filters.diseases.join(', ')}`);
+                if (filters.risks.length > 0) details.push(`เสี่ยง: ${filters.risks.join(', ')}`);
+                return `${baseTitle} (${details.join(' | ')})`;
+            }, [filters]);
+
+            const chartData = useMemo(() => {
+                if (!data || data.length === 0) return [];
+                let filtered = data.filter(row => {
+                    if (filters.year !== 'all' && row.year !== filters.year) return false;
+                    if (filters.addressType !== 'all' && row.addressType !== filters.addressType) return false;
+                    if (filters.communities.length > 0 && !filters.communities.includes(row.community)) return false;
+
+                    if (filters.diseases.length > 0) {
+                        const hasGeneralDisease = (val) => ["รับการรักษาอยู่", "รับการรักษาไม่สม่ำเสมอ", "เคยรักษา / กินยาเอง"].includes(val?.trim());
+                        const strokeKeywords = ["หลอดเลือดสมอง", "โรคหลอดเลือดสมอง", "เส้นเลือดสมองตีบ", "เส้นเลือดในสมองอักเสบ"];
+                        const hasStroke = strokeKeywords.some(kw => row.stroke?.includes(kw));
+
+                        const hasDM = hasGeneralDisease(row.dm);
+                        const hasHT = hasGeneralDisease(row.ht);
+                        const hasHeart = hasGeneralDisease(row.heart);
+                        const hasLipid = hasGeneralDisease(row.lipid);
+
+                        const isMatch = filters.diseases.every(disease => {
+                            if (disease === 'เบาหวาน') return hasDM;
+                            if (disease === 'ความดัน') return hasHT;
+                            if (disease === 'หัวใจ') return hasHeart;
+                            if (disease === 'ไขมัน') return hasLipid;
+                            if (disease === 'หลอดเลือดสมอง') return hasStroke;
+                            return false;
+                        });
+                        if (!isMatch) return false;
+                    }
+
+                    if (filters.risks.length > 0) {
+                        if (!row.risks) return false;
+                        const rowRisks = row.risks.split(',').map(r => r.trim());
+                        const isMatch = filters.risks.every(risk => rowRisks.includes(risk));
+                        if (!isMatch) return false;
+                    }
+                    return true;
+                });
+                const ageShift = projectionYear - currentYearTH;
+                return processPyramidData(filtered, pyramidConfig, parseAge, ageShift);
+            }, [data, filters, pyramidConfig, projectionYear, currentYearTH]);
+
+            return (
+                <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6 print-full-width">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4 print:hidden">
+                        <div><h2 className="text-xl font-bold text-gray-800">{baseTitle}</h2><p className="text-sm text-gray-500">อ้างอิงจากฐานข้อมูลคัดกรองสุขภาพ (Demo Seed: {data.length.toLocaleString()} รายการ)</p></div>
+                        <button onClick={() => window.print()} className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm"><i className="fa-solid fa-print"></i> พิมพ์รายงาน</button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 print:hidden bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                        <div><label className="block text-xs font-semibold text-gray-600 mb-1">ปีงบประมาณ</label>
+                            <select className="w-full border rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:border-blue-500" value={filters.year} onChange={e => setFilters({ ...filters, year: e.target.value })}>
+                                <option value="all">แสดงทั้งหมด</option>{availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </div>
+                        <div><label className="block text-xs font-semibold text-gray-600 mb-1">ชุมชน</label><MultiSelect options={availableCommunities} selected={filters.communities} onChange={val => setFilters({ ...filters, communities: val })} placeholder="เลือกทั้งหมด" disabled={false} /></div>
+                        <div><label className="block text-xs font-semibold text-gray-600 mb-1">ประเภทที่อยู่</label>
+                            <select className="w-full border rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:border-blue-500" value={filters.addressType} onChange={e => setFilters({ ...filters, addressType: e.target.value })}>
+                                <option value="all">แสดงทั้งหมด</option>{availableAddressTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        </div>
+                        <div><label className={`block text-xs font-semibold mb-1 ${filters.risks.length > 0 ? 'text-gray-400' : 'text-red-600'}`}><i className="fa-solid fa-notes-medical"></i> โรคประจำตัว</label>
+                            <MultiSelect options={CONST_DISEASES} selected={filters.diseases} onChange={val => setFilters({ ...filters, diseases: val })} placeholder="เลือกทั้งหมด" disabled={filters.risks.length > 0} />
+                        </div>
+                        <div><label className={`block text-xs font-semibold mb-1 ${filters.diseases.length > 0 ? 'text-gray-400' : 'text-orange-600'}`}><i className="fa-solid fa-triangle-exclamation"></i> ความเสี่ยง</label>
+                            <MultiSelect options={CONST_RISKS} selected={filters.risks} onChange={val => setFilters({ ...filters, risks: val })} placeholder="เลือกทั้งหมด" disabled={filters.diseases.length > 0} />
+                        </div>
+                    </div>
+
+                    {isLoading ? (<div className="h-96 flex flex-col items-center justify-center text-gray-500 print:hidden"><i className="fa-solid fa-circle-notch fa-spin text-4xl text-blue-600 mb-4"></i></div>) : (
+                        <PyramidDisplay chartData={chartData} pyramidConfig={pyramidConfig} setPyramidConfig={setPyramidConfig} title={printTitle} currentYearTH={currentYearTH} projectionYear={projectionYear} setProjectionYear={setProjectionYear} />
+                    )}
+                </div>
+            );
+        };
+
+        // --- View 2: Area Population ---
+        const AreaPopulationView = ({ areaPop, areaNotes, isLoading, pyramidConfig, setPyramidConfig, currentYearTH, projectionYear, setProjectionYear }) => {
+            const [selectedZone, setSelectedZone] = useState('zone1');
+            const availableAreaYears = useMemo(() => Object.keys(areaPop).sort((a, b) => b - a), [areaPop]);
+            const [selectedViewYear, setSelectedViewYear] = useState('');
+
+            useEffect(() => { if (availableAreaYears.length > 0 && !availableAreaYears.includes(selectedViewYear)) setSelectedViewYear(availableAreaYears[0]); }, [availableAreaYears, selectedViewYear]);
+
+            const zones = [{ id: 'zone1', name: 'เขตที่ 1 พระโขนงเหนือ' }, { id: 'zone2', name: 'เขตที่ 2 คลองตันเหนือ' }, { id: 'zone3', name: 'เขตที่ 3 คลองเตยเหนือ' }, { id: 'all', name: 'รวมทุกเขต' }];
+
+            let title = "พีระมิดประชากรข้อมูลประชากรเขตพื้นที่รับผิดชอบ";
+            if (selectedZone === 'all') title += " (รวมทุกเขต)";
+            else title += ` (${zones.find(z => z.id === selectedZone)?.name || ''})`;
+            if (selectedViewYear) title += ` (ปี ${selectedViewYear})`;
+
+            const displayNotes = useMemo(() => {
+                if (!selectedViewYear || !areaNotes[selectedViewYear]) return [];
+                let notes = [];
+                if (selectedZone === 'all') {
+                    ['zone1', 'zone2', 'zone3'].forEach(z => {
+                        if (areaNotes[selectedViewYear][z]) notes.push(`[${zones.find(x => x.id === z).name}] ${areaNotes[selectedViewYear][z]}`);
+                    });
+                } else {
+                    if (areaNotes[selectedViewYear][selectedZone]) notes.push(areaNotes[selectedViewYear][selectedZone]);
+                }
+                return notes;
+            }, [selectedViewYear, selectedZone, areaNotes]);
+
+            const chartData = useMemo(() => {
+                if (!selectedViewYear || !areaPop[selectedViewYear]) return [];
+                let rawData = [];
+                const yearData = areaPop[selectedViewYear];
+
+                if (selectedZone === 'all') {
+                    const agg = {};
+                    ['zone1', 'zone2', 'zone3'].forEach(z => {
+                        Object.keys(yearData[z] || {}).forEach(ageStr => {
+                            if (!agg[ageStr]) agg[ageStr] = { male: 0, female: 0 };
+                            agg[ageStr].male += parseInt(yearData[z][ageStr].male || 0);
+                            agg[ageStr].female += parseInt(yearData[z][ageStr].female || 0);
+                        });
+                    });
+                    Object.keys(agg).forEach(ageStr => {
+                        for (let i = 0; i < agg[ageStr].male; i++) rawData.push({ age: ageStr, gender: 'ชาย' });
+                        for (let i = 0; i < agg[ageStr].female; i++) rawData.push({ age: ageStr, gender: 'หญิง' });
+                    });
+                } else {
+                    const zoneDb = yearData[selectedZone] || {};
+                    Object.keys(zoneDb).forEach(ageStr => {
+                        const m = parseInt(zoneDb[ageStr].male || 0);
+                        const f = parseInt(zoneDb[ageStr].female || 0);
+                        for (let i = 0; i < m; i++) rawData.push({ age: ageStr, gender: 'ชาย' });
+                        for (let i = 0; i < f; i++) rawData.push({ age: ageStr, gender: 'หญิง' });
+                    });
+                }
+                const parseAge = (str) => { if (str === '<1') return 0; return parseInt(str); };
+                const baseYear = parseInt(selectedViewYear) || currentYearTH;
+                const ageShift = projectionYear - baseYear;
+                return processPyramidData(rawData, pyramidConfig, parseAge, ageShift);
+            }, [areaPop, selectedZone, pyramidConfig, projectionYear, selectedViewYear, currentYearTH]);
+
+            return (
+                <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6 print-full-width">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 print:hidden">
+                        <div><h2 className="text-xl font-bold text-gray-800">ข้อมูลประชากรเขตพื้นที่รับผิดชอบ</h2></div>
+                        <button onClick={() => window.print()} className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm"><i className="fa-solid fa-print"></i> พิมพ์รายงาน</button>
+                    </div>
+                    <div className="mb-4 p-4 bg-gray-50 border rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
+                        <div className="flex flex-wrap gap-2">
+                            {zones.map(z => <button key={z.id} onClick={() => setSelectedZone(z.id)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedZone === z.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>{z.name}</button>)}
+                        </div>
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 border rounded-lg shadow-sm">
+                            <span className="text-sm font-semibold text-gray-600">ปี พ.ศ.</span>
+                            {availableAreaYears.length > 0 ? (
+                                <select className="font-bold text-blue-700 outline-none cursor-pointer" value={selectedViewYear} onChange={e => setSelectedViewYear(e.target.value)}>
+                                    {availableAreaYears.map(y => <option key={y} value={y}>{y}</option>)}
+                                </select>
+                            ) : (<span className="text-sm text-red-500">ไม่มีข้อมูล</span>)}
+                        </div>
+                    </div>
+
+                    {displayNotes.length > 0 && (
+                        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                            <h4 className="font-bold mb-1"><i className="fa-solid fa-note-sticky"></i> หมายเหตุ:</h4>
+                            <ul className="list-disc pl-5">
+                                {displayNotes.map((n, i) => <li key={i}>{n}</li>)}
+                            </ul>
+                        </div>
+                    )}
+
+                    {isLoading ? (<div className="h-96 flex flex-col items-center justify-center text-gray-500 print:hidden"><i className="fa-solid fa-circle-notch fa-spin text-4xl text-blue-600 mb-4"></i></div>) : (
+                        <PyramidDisplay chartData={chartData} pyramidConfig={pyramidConfig} setPyramidConfig={setPyramidConfig} title={title} currentYearTH={currentYearTH} projectionYear={projectionYear} setProjectionYear={setProjectionYear} />
+                    )}
+                </div>
+            );
+        };
+
+        // --- View 2.5: Watthana Population ---
+        const WatthanaPopulationView = ({ watthanaData, isLoading, pyramidConfig, setPyramidConfig, currentYearTH, projectionYear, setProjectionYear }) => {
+            const [selectedComm, setSelectedComm] = useState(WATTHANA_COMMUNITIES[1]);
+            const availableYears = useMemo(() => Object.keys(watthanaData).sort((a, b) => b - a), [watthanaData]);
+            const [selectedViewYear, setSelectedViewYear] = useState('');
+
+            useEffect(() => { if (availableYears.length > 0 && !availableYears.includes(selectedViewYear)) setSelectedViewYear(availableYears[0]); }, [availableYears, selectedViewYear]);
+
+            let title = `สถิติประชากรเขตวัฒนา (${selectedComm})`;
+            if (selectedViewYear) title += ` (ปี ${selectedViewYear})`;
+
+            const chartData = useMemo(() => {
+                if (!selectedViewYear || !watthanaData[selectedViewYear]) return [];
+                let rawData = [];
+                const commDb = watthanaData[selectedViewYear][selectedComm] || {};
+
+                Object.keys(commDb).forEach(ageStr => {
+                    const m = parseInt(commDb[ageStr].male || 0);
+                    const f = parseInt(commDb[ageStr].female || 0);
+                    for (let i = 0; i < m; i++) rawData.push({ age: ageStr, gender: 'ชาย' });
+                    for (let i = 0; i < f; i++) rawData.push({ age: ageStr, gender: 'หญิง' });
+                });
+
+                const parseAge = (str) => { if (str === '<1') return 0; return parseInt(str); };
+                const baseYear = parseInt(selectedViewYear) || currentYearTH;
+                const ageShift = projectionYear - baseYear;
+                return processPyramidData(rawData, pyramidConfig, parseAge, ageShift);
+            }, [watthanaData, selectedComm, pyramidConfig, projectionYear, selectedViewYear, currentYearTH]);
+
+            return (
+                <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6 print-full-width">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 print:hidden">
+                        <div><h2 className="text-xl font-bold text-gray-800">สถิติประชากร จากเขตวัฒนา</h2></div>
+                        <button onClick={() => window.print()} className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm"><i className="fa-solid fa-print"></i> พิมพ์รายงาน</button>
+                    </div>
+                    <div className="mb-6 p-4 bg-gray-50 border rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 border rounded-lg shadow-sm w-full md:w-auto">
+                            <span className="text-sm font-semibold text-gray-600">เลือกชุมชน</span>
+                            <select className="font-bold text-blue-700 outline-none cursor-pointer w-full md:w-auto" value={selectedComm} onChange={e => setSelectedComm(e.target.value)}>
+                                {WATTHANA_COMMUNITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 border rounded-lg shadow-sm">
+                            <span className="text-sm font-semibold text-gray-600">ปี พ.ศ.</span>
+                            {availableYears.length > 0 ? (
+                                <select className="font-bold text-blue-700 outline-none cursor-pointer" value={selectedViewYear} onChange={e => setSelectedViewYear(e.target.value)}>
+                                    {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                                </select>
+                            ) : (<span className="text-sm text-red-500">ไม่มีข้อมูล</span>)}
+                        </div>
+                    </div>
+                    {isLoading ? (<div className="h-96 flex flex-col items-center justify-center text-gray-500 print:hidden"><i className="fa-solid fa-circle-notch fa-spin text-4xl text-blue-600 mb-4"></i></div>) : (
+                        <PyramidDisplay chartData={chartData} pyramidConfig={pyramidConfig} setPyramidConfig={setPyramidConfig} title={title} currentYearTH={currentYearTH} projectionYear={projectionYear} setProjectionYear={setProjectionYear} />
+                    )}
+                </div>
+            );
+        };
+
+        // --- View 3: Data Management ---
+        const DataManagementView = ({ areaPop, areaNotes, watthanaData, refreshData, currentYearTH }) => {
+            const [manageMode, setManageMode] = useState('area');
+            const [selectedManageYear, setSelectedManageYear] = useState(currentYearTH);
+            const [activeTab, setActiveTab] = useState('zone1');
+            const [selectedComm, setSelectedComm] = useState(WATTHANA_COMMUNITIES[0]);
+
+            const [formData, setFormData] = useState({});
+            const [currentNote, setCurrentNote] = useState('');
+            const [isSaving, setIsSaving] = useState(false);
+
+            const zones = [{ id: 'zone1', name: 'เขต 1 พระโขนงเหนือ' }, { id: 'zone2', name: 'เขต 2 คลองตันเหนือ' }, { id: 'zone3', name: 'เขต 3 คลองเตยเหนือ' }];
+
+            useEffect(() => {
+                if (manageMode === 'area') {
+                    if (areaPop && areaPop[selectedManageYear] && areaPop[selectedManageYear][activeTab]) setFormData(JSON.parse(JSON.stringify(areaPop[selectedManageYear][activeTab])));
+                    else setFormData({});
+                    if (areaNotes && areaNotes[selectedManageYear] && areaNotes[selectedManageYear][activeTab]) setCurrentNote(areaNotes[selectedManageYear][activeTab]);
+                    else setCurrentNote('');
+                } else {
+                    if (watthanaData && watthanaData[selectedManageYear] && watthanaData[selectedManageYear][selectedComm]) setFormData(JSON.parse(JSON.stringify(watthanaData[selectedManageYear][selectedComm])));
+                    else setFormData({});
+                }
+            }, [manageMode, areaPop, areaNotes, watthanaData, activeTab, selectedComm, selectedManageYear]);
+
+            const handleInputChange = (age, gender, value) => {
+                const numValue = value === '' ? 0 : parseInt(value) || 0;
+                setFormData(prev => ({ ...prev, [age]: { ...prev[age], [gender]: numValue } }));
+            };
+
+            const handleSave = () => {
+                setIsSaving(true);
+                if (manageMode === 'area') {
+                    window.DemoBackend.saveAreaDataWithNote(selectedManageYear, activeTab, formData, currentNote)
+                        .then((success) => { alert(success ? `[Demo] บันทึกข้อมูลเรียบร้อย` : 'กรุณากด Setup ตารางก่อน'); setIsSaving(false); refreshData(); })
+                        .catch((err) => { console.error(err); alert('เกิดข้อผิดพลาด'); setIsSaving(false); });
+                } else {
+                    window.DemoBackend.saveWatthanaData(selectedManageYear, selectedComm, formData)
+                        .then((success) => { alert(success ? `[Demo] บันทึกข้อมูลเรียบร้อย` : 'กรุณากด Setup ตารางก่อน'); setIsSaving(false); refreshData(); })
+                        .catch((err) => { console.error(err); alert('เกิดข้อผิดพลาด'); setIsSaving(false); });
+                }
+            };
+
+            const handleSetupDB = () => {
+                if (!window.confirm(`สร้างโครงสร้างข้อมูลปี พ.ศ. ${selectedManageYear} สำหรับ ${manageMode === 'area' ? 'เขตพื้นที่รับผิดชอบ' : 'เขตวัฒนา'} ใหม่ใช่หรือไม่?`)) return;
+                setIsSaving(true);
+                if (manageMode === 'area') {
+                    window.DemoBackend.setupAreaSheet(selectedManageYear).then((msg) => { alert(msg); setIsSaving(false); refreshData(); });
+                } else {
+                    window.DemoBackend.setupWatthanaSheet(selectedManageYear).then((msg) => { alert(msg); setIsSaving(false); refreshData(); });
+                }
+            };
+
+            const rows = ['<1']; for (let i = 1; i <= 105; i++) rows.push(String(i));
+
+            return (
+                <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6 flex flex-col h-full">
+                    <div className="flex gap-4 mb-6 border-b pb-4">
+                        <button onClick={() => setManageMode('area')} className={`px-6 py-2 rounded-lg font-bold transition-all ${manageMode === 'area' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>จัดการพื้นที่รับผิดชอบ</button>
+                        <button onClick={() => setManageMode('watthana')} className={`px-6 py-2 rounded-lg font-bold transition-all ${manageMode === 'watthana' ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>จัดการประชากรเขตวัฒนา</button>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-800">{manageMode === 'area' ? 'ประชากรพื้นที่รับผิดชอบ' : 'ประชากรเขตวัฒนา'}</h2>
+                            <p className="text-sm text-gray-500">บันทึกจำนวนประชากรตามปี พ.ศ. (Demo Mode: บันทึกในเบราว์เซอร์)</p>
+                        </div>
+                        <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border">
+                            <span className="text-sm font-semibold text-gray-700">ปี พ.ศ.</span>
+                            <select className="border-2 border-blue-300 px-3 py-1 rounded text-blue-700 bg-white font-bold outline-none" value={selectedManageYear} onChange={(e) => setSelectedManageYear(parseInt(e.target.value))}>
+                                {Array.from({ length: 201 }, (_, i) => currentYearTH - 100 + i).map(year => (<option key={year} value={year}>{year} {year === currentYearTH ? '(ปัจจุบัน)' : ''}</option>))}
+                            </select>
+                            <button onClick={handleSetupDB} className="flex items-center gap-2 text-white bg-green-600 px-3 py-1.5 rounded-lg hover:bg-green-700 text-sm shadow-sm ml-2"><i className="fa-solid fa-table"></i> Setup โครงสร้างตารางปีนี้</button>
+                        </div>
+                    </div>
+
+                    {manageMode === 'area' ? (
+                        <div className="flex border-b mb-4">
+                            {zones.map(z => <button key={z.id} className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === z.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab(z.id)}>{z.name}</button>)}
+                        </div>
+                    ) : (
+                        <div className="mb-4 flex items-center gap-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                            <span className="font-semibold text-indigo-800">เลือกชุมชนที่ต้องการจัดการ:</span>
+                            <select className="border border-indigo-300 px-3 py-2 rounded bg-white text-indigo-900 outline-none flex-1 max-w-md" value={selectedComm} onChange={e => setSelectedComm(e.target.value)}>
+                                {WATTHANA_COMMUNITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                    )}
+
+                    {manageMode === 'area' && (
+                        <div className="mb-4">
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">หมายเหตุ / Note (สำหรับเขตนี้ในปีที่เลือก):</label>
+                            <textarea className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-blue-500" rows="2" placeholder="กรอกข้อความหมายเหตุที่นี่..." value={currentNote} onChange={e => setCurrentNote(e.target.value)}></textarea>
+                        </div>
+                    )}
+
+                    <div className="flex-1 overflow-y-auto mb-4 border rounded-lg">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 sticky top-0 shadow-sm z-10">
+                                <tr><th className="px-4 py-3 text-center border-b w-1/3 text-gray-600 font-semibold">อายุ (ปี)</th><th className="px-4 py-3 text-center border-b w-1/3 text-blue-700 font-semibold bg-blue-50/50">ชาย</th><th className="px-4 py-3 text-center border-b w-1/3 text-pink-700 font-semibold bg-pink-50/50">หญิง</th></tr>
+                            </thead>
+                            <tbody>
+                                {rows.map(age => (
+                                    <tr key={age} className="border-b hover:bg-gray-50">
+                                        <td className="px-4 py-2 text-center font-medium text-gray-700">{age}</td>
+                                        <td className="px-4 py-2"><input type="number" min="0" className="w-full text-center border rounded px-2 py-1 focus:ring-2 focus:ring-blue-400 outline-none bg-white" value={formData[age]?.male !== undefined ? formData[age].male : ''} onChange={(e) => handleInputChange(age, 'male', e.target.value)} /></td>
+                                        <td className="px-4 py-2"><input type="number" min="0" className="w-full text-center border rounded px-2 py-1 focus:ring-2 focus:ring-pink-400 outline-none bg-white" value={formData[age]?.female !== undefined ? formData[age].female : ''} onChange={(e) => handleInputChange(age, 'female', e.target.value)} /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="pt-4 border-t flex justify-end">
+                        <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 shadow-md">
+                            {isSaving ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>} {isSaving ? 'กำลังบันทึก...' : `บันทึกข้อมูล`}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const processPyramidData = (rawData, config, parseAgeFunc, ageShift = 0) => {
+            const counts = {};
+            rawData.forEach(row => {
+                let numAge = parseAgeFunc(row.age);
+                if (numAge < 0) return;
+                numAge += ageShift;
+                if (numAge < 0) return;
+
+                let groupKey = numAge;
+                let displayAge = numAge;
+
+                if (config.groupLifeStage) {
+                    if (numAge <= 5) { groupKey = 0; displayAge = '0-5'; }
+                    else if (numAge <= 24) { groupKey = 6; displayAge = '6-24'; }
+                    else if (numAge <= 34) { groupKey = 25; displayAge = '25-34'; }
+                    else if (numAge <= 59) { groupKey = 35; displayAge = '35-59'; }
+                    else { groupKey = 60; displayAge = '60+'; }
+                } else if (config.group10Years) {
+                    if (numAge >= 100) { groupKey = 100; displayAge = '100+'; }
+                    else { const groupStart = Math.floor(numAge / 10) * 10; groupKey = groupStart; displayAge = `${groupStart}-${groupStart + 9}`; }
+                } else if (config.group5Years) {
+                    if (numAge >= 105) { groupKey = 105; displayAge = '105+'; }
+                    else { const groupStart = Math.floor(numAge / 5) * 5; groupKey = groupStart; displayAge = `${groupStart}-${groupStart + 4}`; }
+                } else {
+                    if (numAge > 105) { groupKey = 105; displayAge = '105+'; }
+                    else { displayAge = numAge === 0 ? '<1' : String(numAge); }
+                }
+
+                if (!counts[groupKey]) counts[groupKey] = { male: 0, female: 0, display: displayAge, sortKey: groupKey };
+                if (row.gender === 'ชาย' || row.gender === 'M') counts[groupKey].male += 1;
+                if (row.gender === 'หญิง' || row.gender === 'F') counts[groupKey].female += 1;
+            });
+
+            let finalData = [];
+            if (config.groupLifeStage) {
+                const buckets = [{ key: 0, label: '0-5' }, { key: 6, label: '6-24' }, { key: 25, label: '25-34' }, { key: 35, label: '35-59' }, { key: 60, label: '60+' }];
+                buckets.forEach(b => {
+                    if (counts[b.key]) finalData.push(counts[b.key]);
+                    else if (!config.hideEmpty) finalData.push({ male: 0, female: 0, display: b.label, sortKey: b.key });
+                });
+            } else if (config.group10Years) {
+                for (let i = 0; i <= 100; i += 10) {
+                    if (counts[i]) finalData.push(counts[i]);
+                    else if (!config.hideEmpty) finalData.push({ male: 0, female: 0, display: i >= 100 ? '100+' : `${i}-${i + 9}`, sortKey: i });
+                }
+            } else if (config.group5Years) {
+                for (let i = 0; i <= 105; i += 5) {
+                    if (counts[i]) finalData.push(counts[i]);
+                    else if (!config.hideEmpty) finalData.push({ male: 0, female: 0, display: i >= 105 ? '105+' : `${i}-${i + 4}`, sortKey: i });
+                }
+            } else {
+                for (let i = 0; i <= 105; i++) {
+                    const display = i === 0 ? '<1' : String(i);
+                    if (counts[i]) finalData.push(counts[i]);
+                    else if (!config.hideEmpty) finalData.push({ male: 0, female: 0, display: display, sortKey: i });
+                }
+            }
+            if (config.hideEmpty) finalData = finalData.filter(r => r.male > 0 || r.female > 0);
+            finalData.sort((a, b) => b.sortKey - a.sortKey);
+            return finalData;
+        };
+
+        // --- Chart Component ---
+        const PyramidDisplay = ({ chartData, pyramidConfig, setPyramidConfig, title, currentYearTH, projectionYear, setProjectionYear }) => {
+            const zoomLevels = [{ label: 'ย่อ 5x', value: 0.2 }, { label: 'ย่อ 4x', value: 0.25 }, { label: 'ย่อ 3x', value: 0.333 }, { label: 'ย่อ 2x', value: 0.5 }, { label: 'ปกติ 1x', value: 1 }, { label: 'ขยาย 2x', value: 2 }, { label: 'ขยาย 3x', value: 3 }, { label: 'ขยาย 4x', value: 4 }, { label: 'ขยาย 5x', value: 5 }];
+            const [zoomIndex, setZoomIndex] = useState(4);
+            const currentZoom = zoomLevels[zoomIndex].value;
+
+            const zoomIn = () => setZoomIndex(prev => Math.min(prev + 1, zoomLevels.length - 1));
+            const zoomOut = () => setZoomIndex(prev => Math.max(prev - 1, 0));
+
+            const isCombined = pyramidConfig.combineGenders;
+
+            const maxPop = chartData.length > 0 ? Math.max(...chartData.map(d => isCombined ? (d.male + d.female) : Math.max(d.male, d.female))) : 0;
+            const scaleMax = Math.max(maxPop, 10) / currentZoom;
+
+            const totalMale = chartData.reduce((sum, d) => sum + d.male, 0);
+            const totalFemale = chartData.reduce((sum, d) => sum + d.female, 0);
+            const totalAll = totalMale + totalFemale;
+
+            return (
+                <div className="flex flex-col flex-1 relative">
+                    {title && <h3 className="text-center font-bold text-xl mb-6 hidden print:block text-gray-800 border-b pb-4">{title}</h3>}
+
+                    <div className="flex flex-wrap justify-center items-center gap-3 mb-6 print:hidden bg-gray-100 p-3 rounded-xl border">
+                        <label className="flex items-center cursor-pointer bg-white border px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm">
+                            <input type="checkbox" className="mr-2 h-4 w-4 text-green-600 rounded" checked={isCombined} onChange={e => setPyramidConfig({ ...pyramidConfig, combineGenders: e.target.checked })} />
+                            <span className="font-semibold text-green-700">รวมชายหญิง (แท่งเดียว)</span>
+                        </label>
+                        <div className="h-6 border-l border-gray-300 mx-1"></div>
+                        <label className="flex items-center cursor-pointer bg-white border px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm">
+                            <input type="checkbox" className="mr-2 h-4 w-4 text-blue-600 rounded" checked={pyramidConfig.hideEmpty} onChange={e => setPyramidConfig({ ...pyramidConfig, hideEmpty: e.target.checked })} />
+                            แสดงเฉพาะที่มีข้อมูล
+                        </label>
+                        <label className="flex items-center cursor-pointer bg-white border px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm">
+                            <input type="checkbox" className="mr-2 h-4 w-4 text-blue-600 rounded" checked={pyramidConfig.group5Years} onChange={e => setPyramidConfig({ ...pyramidConfig, group5Years: e.target.checked, group10Years: false, groupLifeStage: false })} />
+                            กลุ่ม 5 ปี
+                        </label>
+                        <label className="flex items-center cursor-pointer bg-white border px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm">
+                            <input type="checkbox" className="mr-2 h-4 w-4 text-blue-600 rounded" checked={pyramidConfig.group10Years} onChange={e => setPyramidConfig({ ...pyramidConfig, group10Years: e.target.checked, group5Years: false, groupLifeStage: false })} />
+                            กลุ่ม 10 ปี
+                        </label>
+                        <label className="flex items-center cursor-pointer bg-white border px-3 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors shadow-sm font-semibold text-purple-700">
+                            <input type="checkbox" className="mr-2 h-4 w-4 text-purple-600 rounded" checked={pyramidConfig.groupLifeStage} onChange={e => setPyramidConfig({ ...pyramidConfig, groupLifeStage: e.target.checked, group5Years: false, group10Years: false })} />
+                            กลุ่มช่วงวัย
+                        </label>
+
+                        <div className="flex items-center gap-1 bg-white border rounded-lg p-1 shadow-sm ml-2">
+                            <span className="text-sm font-semibold text-gray-600 px-3 min-w-[80px] text-center">{zoomLevels[zoomIndex].label}</span>
+                            <button onClick={zoomOut} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 transition-colors"><i className="fa-solid fa-minus"></i></button>
+                            <button onClick={zoomIn} className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"><i className="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 min-h-[300px] border rounded-lg bg-white p-4 overflow-y-auto print:border-none print:p-0 print:overflow-visible">
+                        <div className="flex justify-center gap-8 mb-4 border-b pb-2 sticky top-0 bg-white z-10 print:static">
+                            {isCombined ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 bg-green-500 rounded-sm"></div>
+                                    <span className="font-semibold text-green-800">รวมชายและหญิง ({totalAll.toLocaleString()} คน)</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-4 h-4 bg-blue-500 rounded-sm"></div>
+                                        <span className="font-semibold text-blue-800">ชาย ({totalMale.toLocaleString()} คน)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-4 h-4 bg-pink-500 rounded-sm"></div>
+                                        <span className="font-semibold text-pink-800">หญิง ({totalFemale.toLocaleString()} คน)</span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {chartData.length === 0 ? (
+                            <div className="text-center text-gray-400 py-10">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</div>
+                        ) : (
+                            <div className="flex flex-col gap-1 w-full max-w-4xl mx-auto pb-8 relative">
+                                <div className="absolute inset-y-0 left-0 w-[calc(50%-1.5rem)] flex justify-between pointer-events-none opacity-10">
+                                    {[...Array(5)].map((_, i) => <div key={i} className="h-full border-l border-gray-800"></div>)}
+                                </div>
+                                <div className="absolute inset-y-0 right-0 w-[calc(50%-1.5rem)] flex justify-between pointer-events-none opacity-10">
+                                    {[...Array(5)].map((_, i) => <div key={i} className="h-full border-r border-gray-800"></div>)}
+                                </div>
+
+                                {chartData.map((row, idx) => (
+                                    isCombined ? (
+                                        <div key={idx} className="flex items-center text-xs sm:text-sm hover:bg-gray-50 transition-colors group w-full">
+                                            <div className="flex-1 flex justify-end items-center pr-2 relative h-5 sm:h-6">
+                                                <div style={{ width: `${Math.min(((row.male + row.female) / scaleMax) * 100, 100)}%` }} className="bg-green-500 h-full rounded-l-sm min-w-[1px] transition-all duration-300"></div>
+                                            </div>
+                                            <div className="w-12 sm:w-16 text-center font-bold text-gray-700 bg-gray-100 rounded-sm py-1 z-10 text-[10px] sm:text-xs shadow-sm border border-gray-200 print:bg-gray-100">{row.display}</div>
+                                            <div className="flex-1 flex justify-start items-center pl-2 relative h-5 sm:h-6">
+                                                <div style={{ width: `${Math.min(((row.male + row.female) / scaleMax) * 100, 100)}%` }} className="bg-green-500 h-full rounded-r-sm min-w-[1px] transition-all duration-300"></div>
+                                                <span className="ml-2 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity absolute left-full whitespace-nowrap print:hidden font-medium">{(row.male + row.female).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div key={idx} className="flex items-center text-xs sm:text-sm hover:bg-gray-50 transition-colors group">
+                                            <div className="flex-1 flex justify-end items-center pr-2 relative h-5 sm:h-6">
+                                                <span className="mr-2 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity absolute right-full whitespace-nowrap print:hidden">{row.male > 0 ? row.male.toLocaleString() : ''}</span>
+                                                <div style={{ width: `${Math.min((row.male / scaleMax) * 100, 100)}%` }} className="bg-blue-500 h-full rounded-l-sm min-w-[1px] transition-all duration-300"></div>
+                                            </div>
+                                            <div className="w-12 sm:w-16 text-center font-bold text-gray-700 bg-gray-100 rounded-sm py-1 z-10 text-[10px] sm:text-xs shadow-sm border border-gray-200 print:bg-gray-100">{row.display}</div>
+                                            <div className="flex-1 flex justify-start items-center pl-2 relative h-5 sm:h-6">
+                                                <div style={{ width: `${Math.min((row.female / scaleMax) * 100, 100)}%` }} className="bg-pink-500 h-full rounded-r-sm min-w-[1px] transition-all duration-300"></div>
+                                                <span className="ml-2 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity absolute left-full whitespace-nowrap print:hidden">{row.female > 0 ? row.female.toLocaleString() : ''}</span>
+                                            </div>
+                                        </div>
+                                    )
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-4 bg-gray-50 border rounded-lg p-4 flex flex-wrap justify-around items-center text-center gap-4 print:border-none print:py-4">
+                        <div><p className="text-sm text-gray-500">ประชากรทั้งหมด</p><p className="text-2xl font-bold text-gray-800">{totalAll.toLocaleString()}</p></div>
+                        <div><p className="text-sm text-gray-500">รวมชาย</p><p className="text-xl font-bold text-blue-600">{totalMale.toLocaleString()}</p><p className="text-xs text-gray-400">({totalAll > 0 ? ((totalMale / totalAll) * 100).toFixed(1) : 0}%)</p></div>
+                        <div><p className="text-sm text-gray-500">รวมหญิง</p><p className="text-xl font-bold text-pink-600">{totalFemale.toLocaleString()}</p><p className="text-xs text-gray-400">({totalAll > 0 ? ((totalFemale / totalAll) * 100).toFixed(1) : 0}%)</p></div>
+                    </div>
+
+                    <div className="mt-6 bg-blue-50 border-2 border-blue-100 rounded-xl p-5 flex flex-col items-center justify-center print:border-none print:bg-transparent print:p-0">
+                        <h4 className="font-bold text-blue-800 mb-3 text-lg flex items-center gap-2 print:hidden"><i className="fa-solid fa-clock-rotate-left"></i> พีระมิดประชากรเมื่ออยู่ในปี</h4>
+                        <div className="flex items-center gap-3 print:hidden">
+                            <span className="text-gray-600 font-semibold">พ.ศ.</span>
+                            <select className="border-2 border-blue-300 px-6 py-2 rounded-lg text-xl font-bold text-blue-700 bg-white shadow-sm focus:outline-none focus:border-blue-500 cursor-pointer" value={projectionYear} onChange={(e) => setProjectionYear(parseInt(e.target.value))}>
+                                {Array.from({ length: 201 }, (_, i) => currentYearTH - 100 + i).map(year => (<option key={year} value={year}>{year} {year === currentYearTH ? '(ปัจจุบัน)' : ''}</option>))}
+                            </select>
+                        </div>
+                        <div className="hidden print:block text-base font-bold text-gray-600 text-center">พ.ศ. {projectionYear} {projectionYear === currentYearTH ? '(ปัจจุบัน)' : ''}</div>
+                        {projectionYear !== currentYearTH && <p className="mt-3 text-sm text-blue-600 bg-blue-100 px-4 py-2 rounded-full print:hidden">* กราฟจำลอง: ระบบทำการ {projectionYear > currentYearTH ? `บวกอายุประชากรขึ้น` : `ลบอายุประชากรลง`} เพื่อแสดงภาพประชากรในอนาคต/อดีต</p>}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- View 4: LTC-HHC View ---
+        const LtcHhcView = ({ data, isLoading, pyramidConfig, setPyramidConfig, currentYearTH, projectionYear, setProjectionYear }) => {
+            const baseTitle = "พีระมิดประชากรข้อมูลผู้ป่วย LTC-HHC";
+
+            const [selectedZones, setSelectedZones] = useState([]);
+            const [selectedCommunities, setSelectedCommunities] = useState([]);
+            const [selectedCommunityStatuses, setSelectedCommunityStatuses] = useState([]);
+            const [selectedGroups, setSelectedGroups] = useState([]);
+            const [adlMin, setAdlMin] = useState(0);
+            const [adlMax, setAdlMax] = useState(20);
+            const [selectedPatientStatuses, setSelectedPatientStatuses] = useState([]);
+            const [selectedVisitStatuses, setSelectedVisitStatuses] = useState([]);
+            const [multidisciplinaryFilter, setMultidisciplinaryFilter] = useState('all');
+
+            const availableZones = useMemo(() => [...new Set(data.map(d => d.zone).filter(Boolean))].sort(), [data]);
+            const availableCommunities = useMemo(() => [...new Set(data.map(d => d.community).filter(Boolean))].sort(), [data]);
+            const availableCommunityStatuses = useMemo(() => [...new Set(data.map(d => d.communityStatus).filter(Boolean))].sort(), [data]);
+
+            const GROUP_OPTIONS = [
+                "LTC เบิกได้ - กลุ่ม 1",
+                "LTC เบิกได้ - กลุ่ม 2",
+                "LTC เบิกได้ - กลุ่ม 3",
+                "LTC เบิกได้ - กลุ่ม 4",
+                "LTC เบิกไม่ได้ - กลุ่ม 1",
+                "LTC เบิกไม่ได้ - กลุ่ม 2",
+                "LTC เบิกไม่ได้ - กลุ่ม 3",
+                "LTC เบิกไม่ได้ - กลุ่ม 4",
+                "HHC - 1.กลุ่มรักษาหายขาดได้",
+                "HHC - 2.กลุ่มโรคเรื้อรัง",
+                "HHC - 3.กลุ่มโรคเรื้อรังไร้ความสามารถเล็กน้อย",
+                "HHC - 4.กลุ่มโรคเรื้อรังพิการรุนแรง",
+                "HHC - 5.กลุ่มระยะสุดท้าย",
+                "HHC - 6.กลุ่มเฉพาะ"
+            ];
+            const PATIENT_STATUS_OPTIONS = ["รายเก่า", "รายใหม่"];
+            const VISIT_STATUS_OPTIONS = ["ดีขึ้น", "คงเดิม", "แย่ลง", "เสียชีวิต", "ย้ายที่อยู่"];
+            const ADL_SCORES = Array.from({ length: 21 }, (_, i) => i);
+
+            const printTitle = useMemo(() => {
+                let details = [];
+                if (selectedZones.length > 0) details.push(`เขต: ${selectedZones.join(', ')}`);
+                if (selectedCommunities.length > 0) details.push(`ชุมชน: ${selectedCommunities.join(', ')}`);
+                if (selectedCommunityStatuses.length > 0) details.push(`สถานะชุมชน: ${selectedCommunityStatuses.join(', ')}`);
+                if (selectedGroups.length > 0) details.push(`กลุ่ม: ${selectedGroups.length} กลุ่ม`);
+                if (adlMin > 0 || adlMax < 20) details.push(`ADL: ${adlMin}-${adlMax}`);
+                if (selectedPatientStatuses.length > 0) details.push(`สถานะ: ${selectedPatientStatuses.join(', ')}`);
+                if (selectedVisitStatuses.length > 0) details.push(`ผลการเยี่ยม: ${selectedVisitStatuses.join(', ')}`);
+                if (multidisciplinaryFilter !== 'all') details.push(multidisciplinaryFilter === 'has' ? 'มีสหวิชาชีพ' : 'ไม่มีสหวิชาชีพ');
+                return `${baseTitle} ${details.length > 0 ? `(${details.join(' | ')})` : ''}`;
+            }, [selectedZones, selectedCommunities, selectedCommunityStatuses, selectedGroups, adlMin, adlMax, selectedPatientStatuses, selectedVisitStatuses, multidisciplinaryFilter]);
+
+            const { chartData, unspecifiedCount, avgAdl } = useMemo(() => {
+                if (!data || data.length === 0) return { chartData: [], unspecifiedCount: 0, avgAdl: "N/A" };
+
+                let filtered = data.filter(row => {
+                    if (selectedZones.length > 0 && !selectedZones.includes(row.zone)) return false;
+                    if (selectedCommunities.length > 0 && !selectedCommunities.includes(row.community)) return false;
+                    if (selectedCommunityStatuses.length > 0 && !selectedCommunityStatuses.includes(row.communityStatus)) return false;
+
+                    const adlVal = parseInt(row.adl, 10);
+                    if (!isNaN(adlVal)) {
+                        if (adlVal < adlMin || adlVal > adlMax) return false;
+                    } else {
+                        if (adlMin > 0 || adlMax < 20) return false;
+                    }
+
+                    if (selectedPatientStatuses.length > 0 && !selectedPatientStatuses.includes(row.patientStatus)) return false;
+
+                    let hasMulti = false;
+                    for (let val of row.multidisciplinaryRaw) {
+                        const clean = val.trim();
+                        if (clean !== '' && clean !== '-' && clean !== '0') {
+                            hasMulti = true;
+                            break;
+                        }
+                    }
+                    if (multidisciplinaryFilter === 'has' && !hasMulti) return false;
+                    if (multidisciplinaryFilter === 'none' && hasMulti) return false;
+
+                    if (selectedVisitStatuses.length > 0) {
+                        let isMatch = false;
+                        for (let val of row.visitsRaw) {
+                            for (let status of selectedVisitStatuses) {
+                                if (val.includes(status)) {
+                                    isMatch = true;
+                                    break;
+                                }
+                            }
+                            if (isMatch) break;
+                        }
+                        if (!isMatch) return false;
+                    }
+
+                    if (selectedGroups.length > 0) {
+                        let isMatch = false;
+                        for (let g of selectedGroups) {
+                            if (g.startsWith("LTC เบิกได้")) {
+                                const num = g.split("กลุ่ม ")[1];
+                                if (row.ltcBillable === num) isMatch = true;
+                            } else if (g.startsWith("LTC เบิกไม่ได้")) {
+                                const num = g.split("กลุ่ม ")[1];
+                                if (row.ltcNonBillable === num) isMatch = true;
+                            } else if (g.startsWith("HHC -")) {
+                                const num = g.split(" - ")[1].split(".")[0];
+                                if (row.hhc.startsWith(num)) isMatch = true;
+                            }
+                        }
+                        if (!isMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                const validAdlPatients = filtered.filter(p => p.adl !== '' && !isNaN(parseInt(p.adl, 10)));
+                const calculatedAvg = validAdlPatients.length > 0
+                    ? (validAdlPatients.reduce((sum, p) => sum + parseInt(p.adl, 10), 0) / validAdlPatients.length).toFixed(1)
+                    : "N/A";
+
+                const ageShift = projectionYear - currentYearTH;
+                const { pyramidData, unspecifiedCount } = processLtcHhcPyramidData(filtered, pyramidConfig, ageShift);
+
+                return { chartData: pyramidData, unspecifiedCount, avgAdl: calculatedAvg };
+            }, [data, selectedZones, selectedCommunities, selectedCommunityStatuses, adlMin, adlMax, selectedPatientStatuses, multidisciplinaryFilter, selectedVisitStatuses, selectedGroups, pyramidConfig, projectionYear, currentYearTH]);
+
+            return (
+                <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6 print-full-width">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4 print:hidden">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-800">{baseTitle}</h2>
+                            <p className="text-sm text-gray-500">อ้างอิงจากฐานข้อมูลจำลอง LTC และ HHC ({data.length.toLocaleString()} รายการ)</p>
+                        </div>
+                        <button onClick={() => window.print()} className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm">
+                            <i className="fa-solid fa-print"></i> พิมพ์รายงาน
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 print:hidden bg-blue-50/50 p-4 rounded-lg border border-blue-100 text-sm">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">เขต (H)</label>
+                            <MultiSelect options={availableZones} selected={selectedZones} onChange={setSelectedZones} placeholder="เลือกเขตทั้งหมด" disabled={false} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">ชุมชน (I)</label>
+                            <MultiSelect options={availableCommunities} selected={selectedCommunities} onChange={setSelectedCommunities} placeholder="เลือกชุมชนทั้งหมด" disabled={false} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">สถานะชุมชน (J)</label>
+                            <MultiSelect options={availableCommunityStatuses} selected={selectedCommunityStatuses} onChange={setSelectedCommunityStatuses} placeholder="เลือกสถานะทั้งหมด" disabled={false} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">สหวิชาชีพเยี่ยม</label>
+                            <select className="w-full border rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:border-blue-500" value={multidisciplinaryFilter} onChange={e => setMultidisciplinaryFilter(e.target.value)}>
+                                <option value="all">แสดงทั้งหมด</option>
+                                <option value="has">มีสหวิชาชีพเยี่ยม</option>
+                                <option value="none">ไม่มีสหวิชาชีพเยี่ยม</option>
+                            </select>
+                        </div>
+                        <div className="lg:col-span-2">
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">กลุ่มผู้ป่วย HHC & LTC (T, U, V)</label>
+                            <MultiSelect options={GROUP_OPTIONS} selected={selectedGroups} onChange={setSelectedGroups} placeholder="เลือกกลุ่มทั้งหมด" disabled={false} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">สถานะผู้ป่วย (W)</label>
+                            <MultiSelect options={PATIENT_STATUS_OPTIONS} selected={selectedPatientStatuses} onChange={setSelectedPatientStatuses} placeholder="เลือกสถานะทั้งหมด" disabled={false} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">ผลการเยี่ยม (เยี่ยมซ้ำนับ 1)</label>
+                            <MultiSelect options={VISIT_STATUS_OPTIONS} selected={selectedVisitStatuses} onChange={setSelectedVisitStatuses} placeholder="เลือกผลการเยี่ยมทั้งหมด" disabled={false} />
+                        </div>
+                        <div className="lg:col-span-2">
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">คะแนน ADL (S)</label>
+                            <div className="flex items-center gap-2">
+                                <select className="flex-1 border rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:border-blue-500" value={adlMin} onChange={e => setAdlMin(parseInt(e.target.value))}>
+                                    {ADL_SCORES.map(val => <option key={val} value={val} disabled={val > adlMax}>{val}</option>)}
+                                </select>
+                                <span className="text-gray-500 text-xs">ถึง</span>
+                                <select className="flex-1 border rounded-lg px-3 py-2 bg-white text-sm focus:outline-none focus:border-blue-500" value={adlMax} onChange={e => setAdlMax(parseInt(e.target.value))}>
+                                    {ADL_SCORES.map(val => <option key={val} value={val} disabled={val < adlMin}>{val}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="lg:col-span-2 flex items-end justify-start pb-1 text-blue-700 font-semibold text-xs">
+                            <span className="bg-white border rounded-lg px-3 py-2 shadow-sm w-full block text-center lg:text-left">
+                                <i className="fa-solid fa-calculator"></i> ค่าเฉลี่ยคะแนน ADL ของกลุ่มที่เลือก: <strong className="text-sm text-blue-900">{avgAdl}</strong> คะแนน
+                            </span>
+                        </div>
+                    </div>
+
+                    {isLoading ? (
+                        <div className="h-96 flex flex-col items-center justify-center text-gray-500 print:hidden">
+                            <i className="fa-solid fa-circle-notch fa-spin text-4xl text-blue-600 mb-4"></i>
+                            <span>กำลังโหลดข้อมูลจำลอง...</span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            <PyramidDisplay chartData={chartData} pyramidConfig={pyramidConfig} setPyramidConfig={setPyramidConfig} title={printTitle} currentYearTH={currentYearTH} projectionYear={projectionYear} setProjectionYear={setProjectionYear} />
+
+                            {unspecifiedCount > 0 && (
+                                <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800 flex items-start gap-3 print:hidden">
+                                    <i className="fa-solid fa-circle-exclamation text-orange-500 text-lg mt-0.5"></i>
+                                    <div>
+                                        <h4 className="font-bold mb-0.5">ข้อมูลคำนำหน้าไม่ระบุเพศ</h4>
+                                        <p>พบประชากรที่ไม่สามารถจับกลุ่มเพศชาย/หญิงได้จากคำนำหน้านามจำนวน <strong>{unspecifiedCount}</strong> คน (ข้อมูลส่วนนี้จะไม่สามารถแสดงในแถบเพศชาย-หญิงบนกราฟพีระมิดได้ แต่จะถูกรวมในสถิติตัวเลขสรุปผลทั้งหมดแล้ว)</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const processLtcHhcPyramidData = (filteredData, config, ageShift = 0) => {
+            const counts = {};
+            let unspecifiedCount = 0;
+
+            filteredData.forEach(row => {
+                let numAge = parseInt(row.age, 10);
+                if (isNaN(numAge)) return;
+                numAge += ageShift;
+                if (numAge < 0) return;
+
+                const prefix = row.prefix.trim();
+                let gender = '';
+                if (['นาย', 'พระ', 'เด็กชาย'].includes(prefix)) {
+                    gender = 'ชาย';
+                } else if (['นาง', 'นางสาว', 'เด็กหญิง'].includes(prefix)) {
+                    gender = 'หญิง';
+                } else {
+                    gender = 'ไม่ระบุ';
+                    unspecifiedCount++;
+                }
+
+                let groupKey = numAge;
+                let displayAge = numAge;
+
+                if (config.groupLifeStage) {
+                    if (numAge <= 5) { groupKey = 0; displayAge = '0-5'; }
+                    else if (numAge <= 24) { groupKey = 6; displayAge = '6-24'; }
+                    else if (numAge <= 34) { groupKey = 25; displayAge = '25-34'; }
+                    else if (numAge <= 59) { groupKey = 35; displayAge = '35-59'; }
+                    else { groupKey = 60; displayAge = '60+'; }
+                } else if (config.group10Years) {
+                    if (numAge >= 100) { groupKey = 100; displayAge = '100+'; }
+                    else { const groupStart = Math.floor(numAge / 10) * 10; groupKey = groupStart; displayAge = `${groupStart}-${groupStart + 9}`; }
+                } else if (config.group5Years) {
+                    if (numAge >= 105) { groupKey = 105; displayAge = '105+'; }
+                    else { const groupStart = Math.floor(numAge / 5) * 5; groupKey = groupStart; displayAge = `${groupStart}-${groupStart + 4}`; }
+                } else {
+                    if (numAge > 105) { groupKey = 105; displayAge = '105+'; }
+                    else { displayAge = String(numAge); }
+                }
+
+                if (gender !== 'ไม่ระบุ') {
+                    if (!counts[groupKey]) counts[groupKey] = { male: 0, female: 0, display: displayAge, sortKey: groupKey };
+                    if (gender === 'ชาย') counts[groupKey].male += 1;
+                    if (gender === 'หญิง') counts[groupKey].female += 1;
+                }
+            });
+
+            let finalData = [];
+            if (config.groupLifeStage) {
+                const buckets = [{ key: 0, label: '0-5' }, { key: 6, label: '6-24' }, { key: 25, label: '25-34' }, { key: 35, label: '35-59' }, { key: 60, label: '60+' }];
+                buckets.forEach(b => {
+                    if (counts[b.key]) finalData.push(counts[b.key]);
+                    else if (!config.hideEmpty) finalData.push({ male: 0, female: 0, display: b.label, sortKey: b.key });
+                });
+            } else if (config.group10Years) {
+                for (let i = 0; i <= 100; i += 10) {
+                    if (counts[i]) finalData.push(counts[i]);
+                    else if (!config.hideEmpty) finalData.push({ male: 0, female: 0, display: i >= 100 ? '100+' : `${i}-${i + 9}`, sortKey: i });
+                }
+            } else if (config.group5Years) {
+                for (let i = 0; i <= 105; i += 5) {
+                    if (counts[i]) finalData.push(counts[i]);
+                    else if (!config.hideEmpty) finalData.push({ male: 0, female: 0, display: i >= 105 ? '105+' : `${i}-${i + 4}`, sortKey: i });
+                }
+            } else {
+                for (let i = 0; i <= 105; i++) {
+                    const display = String(i);
+                    if (counts[i]) finalData.push(counts[i]);
+                    else if (!config.hideEmpty) finalData.push({ male: 0, female: 0, display: display, sortKey: i });
+                }
+            }
+            if (config.hideEmpty) finalData = finalData.filter(r => r.male > 0 || r.female > 0);
+            finalData.sort((a, b) => b.sortKey - a.sortKey);
+
+            return { pyramidData: finalData, unspecifiedCount };
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
